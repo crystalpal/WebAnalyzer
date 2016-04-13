@@ -9,11 +9,12 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import time as tm
+from scipy import cluster as cl
 
 
 
 file = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test.csv'
-file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_22.csv'
+file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_13.csv'
 
 colors = ["red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold", 
           "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"          
@@ -53,22 +54,14 @@ def line_prepender(filename, line):
         f.seek(0, 0)
         f.write(line.rstrip('\r\n') +  '\n' + content)
         
+inputline = "2016-03-13T09:31:16.062Z,load,https://www.google.be/?gws_rd=ssl,"
 
-        
-#line_prepender(file1, 'time,action,link,other')  
+def parseClick(inputline):
+    action = extractAction(inputline)
+    insertAction(action)
 
-
-f = open(file1)
-data = csv.reader(f, delimiter=',')
-
-loads = []
-clicks = []
-domains = {}
-
-
-iterrows = iter(data)
-next(iterrows)
-for row in iterrows:
+def extractAction(inputline):
+    row = inputline.split(',')
     timestamp = row[0]
     act = row[1]
     link = row [2]
@@ -80,23 +73,28 @@ for row in iterrows:
     minute = timestamp[14:-8]
     second = timestamp[17:-5]
     timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")      
-    '''    
-    datetime = time.struct_time(tm_year=year, tm_mon=month, tm_mday=day, tm_hour=hour, tm_min=minute,
-                 tm_sec=second)#, tm_wday=3, tm_yday=335, tm_isdst=-1)
-    print (datetime)
-    '''
-    action = Action(act, domain, link, timeformat, colors[len(clicks)%9])
-    if act == "load":
+    return Action(act, domain, link, timeformat, colors[len(clicks)%9])
+
+def insertAction(action):
+    if action.action == "load":
         loads.append(action)
-    if act == "click":
+    elif action.action == "click":
         clicks.append(action)
         if not action.domain in domains.keys():
-            domains[action.domain] = Domain(action.domain, colors[len(domains.keys())%9])
-   
-edges = []
-domainedges = []
-linknodes = {}
-for i in range(0, len(clicks)):
+            domains[action.domain] = Domain(action.domain, colors[len(domains.keys())%9])          
+        domains[action.domain].urls.append(action)
+        if len(clicks) > 1:
+            previous = clicks[-2]
+            linknodes[action.link] = action
+            time = action.timedifference(previous)
+            edges.append((previous, action))
+            F.add_edge(previous, action, weight=5)
+            dom1 = domains[action.domain]
+            dom2 = domains[previous.domain]
+            if not dom1.dom == dom2.dom: 
+                domainedges.append((dom1, dom2))   
+"""
+    for i in range(0, len(clicks)):
     c1 = clicks[i]
     if not c1.link in linknodes:
         linknodes[c1.link] = c1
@@ -109,9 +107,43 @@ for i in range(0, len(clicks)):
         if not dom1.dom == dom2.dom: 
             domainedges.append((dom1, dom2))   
     domains[c1.domain].urls.append(c1)
+"""
+
+parseClick(inputline)    
+        
+#line_prepender(file1, 'time,action,link,other')  
 
 
-colormapping = dict(zip(domains, colors))
+f = open(file1)
+#data = csv.reader(f, delimiter=',')
+data = f
+
+loads = []
+clicks = []
+domains = {}
+edges = []
+domainedges = []
+linknodes = {}
+
+plt.figure(figsize=(10,10))
+plt.axis('off') 
+F = nx.MultiDiGraph()
+
+iterrows = iter(data)
+next(iterrows)
+for row in iterrows:
+    parseClick(str(row))
+    
+    
+#F.add_edges_from(edges)
+nodevalues = [node.color for node in F.nodes()]
+nodelabels = {clicks[node]:clicks[node].domain for node in range(0, len(F.nodes()))}
+nodepos = nx.fruchterman_reingold_layout(F)
+nx.draw_networkx_nodes(F, nodepos, cmap=plt.get_cmap('jet'), node_color = nodevalues, node_size=1500)
+nx.draw_networkx_edges(F, nodepos, edgelist=edges, arrows=True)
+nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
+plt.show() 
+    
 """
 plt.figure(figsize=(10,10))
 plt.axis('off') 
@@ -126,32 +158,32 @@ nx.draw_networkx_edges(G, pos, edgelist=domainedges, arrows=True)
 nx.draw_networkx_labels(G, pos, labels ,font_size=10)
 
 #plt.show()
-print ("total domains: " + str(len(colormapping))) 
+print ("total domains: " + str(len(domains))) 
 
 """
-plt.figure(figsize=(10,10))
-plt.axis('off') 
-F = nx.MultiDiGraph()
-F.add_edges_from(edges)
-nodevalues = [node.color for node in F.nodes()]
-nodelabels = {clicks[node]:node for node in range(0, len(F.nodes()))}
-nodepos = nx.fruchterman_reingold_layout(F)
-gnodes = nx.draw_networkx_nodes(F, nodepos, cmap=plt.get_cmap('jet'), node_color = nodevalues, node_size=1500)
-nx.draw_networkx_edges(F, nodepos, edgelist=edges, arrows=True)
-nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
-plt.show()
+
+
 
 for start, end in edges:
     F.add_edge(start, end)
     #nx.draw_networkx_edges(G, pos, edgelist=edges, arrows=True, length=labels)
 
 proposedlink = clicks[5].link
+print(clicks[4].link)
 print(proposedlink)
+print(clicks[6].link)
 print("---")
 
 for n in F.neighbors(linknodes[proposedlink]):
+    print(n.link)
     for nn in F.neighbors(n):
         print(nn.link)
+
+print("----")
+nexts = nx.single_source_shortest_path_length(F ,source=n, cutoff=5)
+print(nexts)
+for ns in nexts:
+    print(ns.link)
 
 
 
