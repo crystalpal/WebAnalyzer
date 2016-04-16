@@ -15,10 +15,12 @@ from scipy import cluster as cl
 
 file = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test.csv'
 file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_13.csv'
+file2 = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_22.csv'
 
 colors = ["red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold", 
           "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"          
           "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"]  
+
     
 class Action(object):
     action =""
@@ -34,7 +36,6 @@ class Action(object):
         self.color = color
         
     def timedifference(self, action):
-        time = tm.mktime(action.timestamp) - tm.mktime(self.timestamp)
         return tm.mktime(action.timestamp) - tm.mktime(self.timestamp)
         
 class Domain(object):
@@ -86,7 +87,9 @@ def insertAction(action):
         if len(clicks) > 1:
             previous = clicks[-2]
             linknodes[action.link] = action
-            time = action.timedifference(previous)
+            time = previous.timedifference(action)
+            if time > maxtime[0]:
+                maxtime[0] = time
             edges.append((previous, action))
             F.add_edge(previous, action, weight=5)
             dom1 = domains[action.domain]
@@ -108,13 +111,12 @@ def insertAction(action):
             domainedges.append((dom1, dom2))   
     domains[c1.domain].urls.append(c1)
 """
-
-parseClick(inputline)    
+ 
         
 #line_prepender(file1, 'time,action,link,other')  
 
 
-f = open(file1)
+f = open(file2)
 #data = csv.reader(f, delimiter=',')
 data = f
 
@@ -123,7 +125,9 @@ clicks = []
 domains = {}
 edges = []
 domainedges = []
-linknodes = {}
+linknodes = {}    
+maxtime = []
+maxtime.append(0)
 
 plt.figure(figsize=(10,10))
 plt.axis('off') 
@@ -137,9 +141,10 @@ for row in iterrows:
     
 #F.add_edges_from(edges)
 nodevalues = [node.color for node in F.nodes()]
-nodelabels = {clicks[node]:clicks[node].domain for node in range(0, len(F.nodes()))}
+nodelabels = {clicks[node]:clicks[node].domain[clicks[node].domain.index('//')+2:] for node in range(0, len(F.nodes()))}
 nodepos = nx.fruchterman_reingold_layout(F)
-nx.draw_networkx_nodes(F, nodepos, cmap=plt.get_cmap('jet'), node_color = nodevalues, node_size=1500)
+nodesizes = [F.nodes()[index].timedifference(F.nodes()[index+1])/maxtime[0]*1000 for index in range(0, len(F.nodes())-1)]
+nx.draw_networkx_nodes(F, nodepos, cmap=plt.get_cmap('jet'), node_color = nodevalues, node_size=nodesizes)
 nx.draw_networkx_edges(F, nodepos, edgelist=edges, arrows=True)
 nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
 plt.show() 
