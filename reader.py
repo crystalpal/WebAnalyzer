@@ -10,18 +10,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time as tm
 from scipy import cluster as cl
+from matplotlib.colors import colorConverter
 
 
 
 file = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test.csv'
 file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_13.csv'
-file2 = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/test.csv'
+file2 = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_22.csv'
 
 colors = ["red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold", 
           "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"          
           "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"]  
-
-    
+ 
 class Action(object):
     action =""
     domain = ""
@@ -32,21 +32,17 @@ class Action(object):
         self.action = action
         self.domain = domain
         self.link = link
-        self.timestamp = timeformat
+        self.timestamp = tm.mktime(timeformat)
         self.color = color
-        
-    def timedifference(self, action):
-        return tm.mktime(action.timestamp) - tm.mktime(self.timestamp)
-        
+  
 class Domain(object):
-    url = ""
-    color = ""
+    dom = ""
     urls = []
-    def __init__(self, url, color):
+    trail = 0
+    def __init__(self, url):
         self.dom = url
-        self.color = color
         self.urls = []
-    
+        
 def line_prepender(filename, line):
     with open(filename, 'r+') as f:
         content = f.read()
@@ -81,38 +77,28 @@ def insertAction(action):
         loads.append(action)
     elif action.action == "click":
         clicks.append(action)
+        #check how far the last unloaded page was in the past, and start a new trail if necessary
+        if action.timestamp - lasttime[0] > 20:#60*60: # in seconds = 1 hour
+            nboftrails[0] += 1
+        #check if the domain is already known in the system, if not initialize
         if not action.domain in domains.keys():
-            domains[action.domain] = Domain(action.domain, colors[len(domains.keys())%9])
+            domains[action.domain] = Domain(action.domain)
         domains[action.domain].urls.append(action)
         if len(clicks) > 1:
             previous = clicks[-2]
             linknodes[action.link] = action
-            time = previous.timedifference(action)
+            time = action.timestamp - previous.timestamp
             if time > maxtime[0]:
                 maxtime[0] = time
-            edges.append((previous, action))
-            F.add_edge(previous, action, weight=5)
+            edges.append((previous, action, nboftrails[0]))
+            F.add_edge(previous, action, weight=5, trail=nboftrails[0])
             dom1 = domains[previous.domain]
             dom2 = domains[action.domain]
             if not dom1.dom == dom2.dom: 
-                domainedges.append((dom1, dom2))   
-            
-"""
-    for i in range(0, len(clicks)):
-    c1 = clicks[i]
-    if not c1.link in linknodes:
-        linknodes[c1.link] = c1
-    if i+1 < len(clicks):
-        c2 = clicks[i+1]
-        time = c1.timedifference(c2)
-        edges.append((c1, c2)) 
-        dom1 = domains[c1.domain]
-        dom2 = domains[c2.domain]
-        if not dom1.dom == dom2.dom: 
-            domainedges.append((dom1, dom2))   
-    domains[c1.domain].urls.append(c1)
-"""
- 
+                domainedges.append((dom1, dom2, nboftrails[0]))
+                G.add_edge(dom1, dom2, trail = nboftrails[0])   
+    lasttime[0] = action.timestamp
+                
         
 #line_prepender(file1, 'time,action,link,other')  
 
@@ -122,29 +108,34 @@ f = open(file2)
 data = f
 
 loads = []
-clicks = []
-domains = {}
-edges = []
-domainedges = []
-linknodes = {}    
-maxtime = []
-maxtime.append(0)
+clicks = [] # A list containing every click action
+domains = {} # A dictionary mapping domain names on domain objects
+edges = [] # A list containing all edges bewteen (click)nodes
+domainedges = [] # A list containing all edges between domains
+linknodes = {} # A dictionnary mapping urls on action objects   
+maxtime = [0] # The masimum time that is spent on a single url
+domaintime = [0] # The maximum time that is spent in a domain // note, change both or add to trailtime 
+nboftrails = [0] # The total number of trails, acts as a counter
+trails = {} # A dictionnary mapping each trailid to a time? spent in that trail?
+lasttime = [tm.mktime(tm.strptime("1980 1 1 1 1 1", "%Y %m %d %H %M %S"))]
 
 plt.figure(figsize=(10,10))
 plt.axis('off') 
 F = nx.MultiDiGraph()
+G = nx.MultiDiGraph()
 
 iterrows = iter(data)
 next(iterrows)
 for row in iterrows:
-    parseClick(str(row))
+    parseClick(str(row)) 
     
+print("trails " +  str(nboftrails[0]))
     
 #F.add_edges_from(edges)
 nodevalues = [node.color for node in F.nodes()]
 nodelabels = {clicks[node]:clicks[node].domain[clicks[node].domain.index('//')+2:] for node in range(0, len(F.nodes()))}
 nodepos = nx.fruchterman_reingold_layout(F)
-nodesizes = [F.nodes()[index].timedifference(F.nodes()[index+1])/maxtime[0]*1000 for index in range(0, len(F.nodes())-1)]
+nodesizes = [(F.nodes()[index+1].timestamp - F.nodes()[index].timestamp)/maxtime[0]*1000 for index in range(0, len(F.nodes())-1)]
 nx.draw_networkx_nodes(F, nodepos, cmap=plt.get_cmap('jet'), node_color = nodevalues, node_size=nodesizes)
 nx.draw_networkx_edges(F, nodepos, edgelist=edges, arrows=True)
 nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
@@ -153,26 +144,16 @@ plt.show()
 
 plt.figure(figsize=(10,10))
 plt.axis('off') 
-G = nx.MultiDiGraph()
-G.add_edges_from(domainedges)
-values = [node.color for node in G.nodes()]
-sizes = [len(node.urls)*1000 for node in G.nodes()]
+values = [colorConverter.to_rgba('y', alpha = index/(len(G.nodes()))) for index in range(0, len(G.nodes()))]
 labels = {domains[node]:node for node in domains}
 pos = nx.fruchterman_reingold_layout(G)
-gnodes = nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), node_color = values, node_size=sizes)
+sizes = [len(node.urls)*1000 for node in G.nodes()]
+nx.draw_networkx_nodes(G, pos, node_color = values, node_size=sizes)
 nx.draw_networkx_edges(G, pos, edgelist=domainedges, arrows=True)
 nx.draw_networkx_labels(G, pos, labels ,font_size=10)
 
 #plt.show()
 print ("total domains: " + str(len(domains))) 
-
-
-
-
-
-for start, end in edges:
-    F.add_edge(start, end)
-    #nx.draw_networkx_edges(G, pos, edgelist=edges, arrows=True, length=labels)
 
 proposedlink = clicks[5].link
 print(clicks[4].link)
