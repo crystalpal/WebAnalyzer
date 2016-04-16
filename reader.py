@@ -15,7 +15,7 @@ from scipy import cluster as cl
 
 file = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test.csv'
 file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_13.csv'
-file2 = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_22.csv'
+file2 = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/test.csv'
 
 colors = ["red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold", 
           "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"          
@@ -82,7 +82,7 @@ def insertAction(action):
     elif action.action == "click":
         clicks.append(action)
         if not action.domain in domains.keys():
-            domains[action.domain] = Domain(action.domain, colors[len(domains.keys())%9])          
+            domains[action.domain] = Domain(action.domain, colors[len(domains.keys())%9])
         domains[action.domain].urls.append(action)
         if len(clicks) > 1:
             previous = clicks[-2]
@@ -92,10 +92,11 @@ def insertAction(action):
                 maxtime[0] = time
             edges.append((previous, action))
             F.add_edge(previous, action, weight=5)
-            dom1 = domains[action.domain]
-            dom2 = domains[previous.domain]
+            dom1 = domains[previous.domain]
+            dom2 = domains[action.domain]
             if not dom1.dom == dom2.dom: 
                 domainedges.append((dom1, dom2))   
+            
 """
     for i in range(0, len(clicks)):
     c1 = clicks[i]
@@ -149,14 +150,14 @@ nx.draw_networkx_edges(F, nodepos, edgelist=edges, arrows=True)
 nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
 plt.show() 
     
-"""
+
 plt.figure(figsize=(10,10))
 plt.axis('off') 
 G = nx.MultiDiGraph()
 G.add_edges_from(domainedges)
 values = [node.color for node in G.nodes()]
 sizes = [len(node.urls)*1000 for node in G.nodes()]
-labels = {first:second.dom for (first, second) in domainedges}
+labels = {domains[node]:node for node in domains}
 pos = nx.fruchterman_reingold_layout(G)
 gnodes = nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), node_color = values, node_size=sizes)
 nx.draw_networkx_edges(G, pos, edgelist=domainedges, arrows=True)
@@ -165,7 +166,7 @@ nx.draw_networkx_labels(G, pos, labels ,font_size=10)
 #plt.show()
 print ("total domains: " + str(len(domains))) 
 
-"""
+
 
 
 
