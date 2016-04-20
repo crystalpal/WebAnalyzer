@@ -12,11 +12,12 @@ import time as tm
 from scipy import cluster as cl
 from matplotlib.colors import colorConverter
 from collections import namedtuple
+import copy
 
 
 
 file = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test.csv'
-file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_13.csv'
+file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_16J.csv'
 file2 = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_16J.csv'
 
 colors = ["red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold", 
@@ -46,6 +47,7 @@ class Domain(object):
         
         
 Edge = namedtuple("Edge", ["previous", "current"])
+    
         
 def line_prepender(filename, line):
     with open(filename, 'r+') as f:
@@ -65,6 +67,8 @@ def extractAction(inputline):
     act = row[1]
     link = row [2]
     domain = link[:link.index('/', 12)]
+    if "google" in link and "&" in link:
+        link = link[0:link.index('&')]
     year = timestamp[:4]
     month = timestamp[5:-17]
     day = timestamp[8:-14]
@@ -79,14 +83,17 @@ def insertAction(action):
     global maxtime
     global domaintime
         #check how far the last unloaded page was in the past, and start a new trail if necessary
+    add = False
     if action.timestamp - lastnode.timestamp > 60*60: # in seconds = 1 hour
             trails.append([])
-            intertrails.append((lastnode, action))
-            
+            intertrails.append((lastnode, action))                  
     else:       
         if action.action == "load":
             loads.append(action)
-        elif action.action == "click":
+            if len(clicks) < 1 or not action.domain == clicks[-1].domain:
+                add = True
+        if action.action == "click" or add:
+            print(action.link)
             clicks.append(action)       
             #check if the domain is already known in the system, if not initialize
             if not action.domain in domains.keys():
@@ -101,7 +108,7 @@ def insertAction(action):
                 if not (previous, action) in F:
                     F.add_edge(previous, action, weight=0, trails = set())
                 trails[-1].append((previous, action, time))
-                F[previous][action][0]['weight'] += 1  
+                F[previous][action][0]['weight'] += 3 
                 F[previous][action][0]['trails'].add(len(trails))
                 dom1 = domains[previous.domain]
                 dom2 = domains[action.domain]
@@ -109,11 +116,30 @@ def insertAction(action):
                     G.add_edge(dom1, dom2)   
     lastnode = action
                 
+def traverse(G, source, current, maxi, trail, paths):
+    if current == maxi:
+        return
+    for n in G.neighbors(source):
+        print("source: " + source.link + "\n neigh: " + n.link)
+        if n.timestamp - source.timestamp < 20:
+            traverse(G, n, current, maxi, trail, paths)
+        else:
+            score = calculatescore(F, source, n, current)
+            trail[0].append(n)
+            trail[1] += score
+            paths.append(copy.deepcopy(trail))               
+            print("----")
+            current += 1
+            traverse(G, n, current, maxi, trail, paths)
         
+        
+def calculatescore(F, source, neighbor, current):
+    return F[source][neighbor][0]['weight']*0.8
+
 #line_prepender(file2, 'time,action,link,other')  
 
 
-f = open(file2)
+f = open(file1)
 #data = csv.reader(f, delimiter=',')
 data = f
 
@@ -137,15 +163,8 @@ iterrows = iter(data)
 next(iterrows)
 for row in iterrows:
     parseClick(str(row))
-print("----------")
-print(len(trails))
-for nb in range(0, len(trails)):
-    print("trail " + str(nb))
-    for (start, end, time) in trails[nb]:
-        print(start.link)
 
-
-    
+'''
 #F.add_edges_from(edges)
 nodevalues = [node.color for node in F.nodes()]
 nodelabels = {clicks[node]:clicks[node].domain[clicks[node].domain.index('//')+2:] for node in range(0, len(F.nodes()))}
@@ -166,28 +185,17 @@ sizes = [len(node.urls)*1000 for node in G.nodes()]
 nx.draw_networkx_nodes(G, pos, node_color = values, node_size=sizes)
 nx.draw_networkx_edges(G, pos, arrows=True)
 nx.draw_networkx_labels(G, pos, labels ,font_size=10)
-
+'''
 #plt.show()
-print ("total domains: " + str(len(domains))) 
-'''
-proposedlink = clicks[5].link
-print(clicks[4].link)
-print(proposedlink)
-print(clicks[6].link)
-print("---")
-
-for n in F.neighbors(urls[proposedlink]):
-    print(n.link)
-    for nn in F.neighbors(n):
-        print(nn.link)
-
+print ("total domains: " + str(len(domains)))
 print("----")
-nexts = nx.single_source_shortest_path_length(F ,source=n, cutoff=5)
-print(nexts)
-for ns in nexts:
-    print(ns.link)
-'''
+proposed = clicks[0]
 
-
-        
-    
+paths = []
+trail = [[],0]
+      
+traverse(F, proposed, 0, 3, trail, paths)
+for trail in paths:
+    for node in trail[0]:
+        print(node.link)
+    print(trail[1])
