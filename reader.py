@@ -13,6 +13,9 @@ from scipy import cluster as cl
 from matplotlib.colors import colorConverter
 from collections import namedtuple
 import copy
+import datetime
+import pandas as pd
+import os
 
 
 
@@ -62,11 +65,16 @@ def parseClick(inputline):
     insertAction(action)
 
 def extractAction(inputline):
+    inputline = inputline.replace("\"", "")
+    inputline = inputline.replace(" ", "")
     row = inputline.split(',')
     timestamp = row[0]
     act = row[1]
     link = row [2]
-    domain = link[:link.index('/', 12)]
+    domain = link[link.index('//')+2:link.index('/', link.index('//'))]
+    domain = link[link.index('//')+2:link.index('/', 12)]
+    domain = domain.replace("www.", "")  
+    domain = domain[:domain.rindex('.')]
     if "google" in link and "&" in link:
         link = link[0:link.index('&')]
     year = timestamp[:4]
@@ -75,7 +83,7 @@ def extractAction(inputline):
     hour = timestamp[11:-11]
     minute = timestamp[14:-8]
     second = timestamp[17:-5]
-    timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")      
+    timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")          
     return Action(act, domain, link, timeformat, colors[len(clicks)%9])
 
 def insertAction(action):
@@ -93,7 +101,6 @@ def insertAction(action):
             if len(clicks) < 1 or not action.domain == clicks[-1].domain:
                 add = True
         if action.action == "click" or add:
-            print(action.link)
             clicks.append(action)       
             #check if the domain is already known in the system, if not initialize
             if not action.domain in domains.keys():
@@ -112,25 +119,67 @@ def insertAction(action):
                 F[previous][action][0]['trails'].add(len(trails))
                 dom1 = domains[previous.domain]
                 dom2 = domains[action.domain]
-                if not dom1.dom == dom2.dom:
+                weekday = tm.gmtime(action.timestamp).tm_wday
+                if dom2 in weekdays[weekday].keys():
+                    val = weekdays[weekday].get_value(dom2) + 1
+                    weekdays[weekday].set_value(dom2, val)  
+                else:
+                    weekdays[weekday].set_value(dom2, 1)
+                weekdays[weekday] = weekdays[weekday].sort_values(ascending = False)
+                if not dom1.dom == dom2.dom:                    
+                    addtotime(tm.gmtime(action.timestamp).tm_hour+1, dom2)
                     G.add_edge(dom1, dom2)   
     lastnode = action
+    
+    
+def gettime(hour):
+    if 7 <= hour < 10:
+        return daytime[0]
+    elif 10 <= hour < 12:
+        return daytime[1]
+    elif 12 <= hour < 14:
+        return daytime[2]
+    elif 14 <= hour < 16:
+        return daytime[3]
+    elif 16 <= hour < 18:
+        return daytime[4]
+    elif 18 <= hour < 22:
+        return daytime[5]
+    elif hour > 22 or hour <= 1:
+        return daytime[6]
+    else:
+        return daytime[7]
+        
+def addtotime(hour, action):
+    timeday = gettime(hour)
+    if action in timeday.keys():
+        val = timeday.get_value(action) + 1
+        timeday.set_value(action, val)
+    else:
+        timeday.set_value(action, 1)
+    timeday = timeday.sort_values(ascending = False)
                 
 def traverse(G, source, current, maxi, trail, paths):
     if current == maxi:
         return
     for n in G.neighbors(source):
-        print("source: " + source.link + "\n neigh: " + n.link)
         if n.timestamp - source.timestamp < 20:
             traverse(G, n, current, maxi, trail, paths)
         else:
             score = calculatescore(F, source, n, current)
             trail[0].append(n)
             trail[1] += score
-            paths.append(copy.deepcopy(trail))               
-            print("----")
+            paths.append(copy.deepcopy(trail))   
             current += 1
             traverse(G, n, current, maxi, trail, paths)
+            
+def proposeweektimes(amount):
+    #return weekdays[datetime.datetime.today().weekday()][:amount]
+    return weekdays[2][:amount]
+def proposedaytimes(amount):
+    #return gettime(datetime.datetime.today().hour)[:amount]
+    print(len(gettime(8)))
+    return gettime(10)[:amount]
         
         
 def calculatescore(F, source, neighbor, current):
@@ -152,17 +201,20 @@ domaintime = 0 # The maximum time that is spent in a domain // note, change both
 trails = [0] # A list of trailid's containing their urls
 trails[0] = []
 intertrails = []
+weekdays = {0:pd.Series(), 1:pd.Series(), 2:pd.Series(), 3:pd.Series(), 4:pd.Series(), 5:pd.Series(), 6:pd.Series()}
+daytime = {0:pd.Series(), 1:pd.Series(), 2:pd.Series(), 3:pd.Series(), 4:pd.Series(), 5:pd.Series(), 6:pd.Series(), 7:pd.Series()}
 lastnode = Action(None, None, None, tm.strptime("1980 1 1 1 1 1", "%Y %m %d %H %M %S"), None)
 
 plt.figure(figsize=(10,10))
 plt.axis('off') 
 F = nx.MultiDiGraph()
 G = nx.MultiDiGraph()
-
-iterrows = iter(data)
-next(iterrows)
-for row in iterrows:
-    parseClick(str(row))
+path = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/allsets'
+for fi in os.listdir(path):
+    print(fi)
+    iterrows = iter(open(path + "/"+fi))
+    for row in iterrows:
+        parseClick(str(row))
 
 '''
 #F.add_edges_from(edges)
@@ -174,7 +226,7 @@ nx.draw_networkx_nodes(F, nodepos, cmap=plt.get_cmap('jet'), node_color = nodeva
 nx.draw_networkx_edges(F, nodepos, arrows=True)
 nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
 plt.show() 
-    
+''' 
 
 plt.figure(figsize=(10,10))
 plt.axis('off') 
@@ -185,7 +237,7 @@ sizes = [len(node.urls)*1000 for node in G.nodes()]
 nx.draw_networkx_nodes(G, pos, node_color = values, node_size=sizes)
 nx.draw_networkx_edges(G, pos, arrows=True)
 nx.draw_networkx_labels(G, pos, labels ,font_size=10)
-'''
+
 #plt.show()
 print ("total domains: " + str(len(domains)))
 print("----")
@@ -193,9 +245,18 @@ proposed = clicks[0]
 
 paths = []
 trail = [[],0]
-      
+'''      
 traverse(F, proposed, 0, 3, trail, paths)
 for trail in paths:
     for node in trail[0]:
         print(node.link)
     print(trail[1])
+'''    
+times = proposeweektimes(3)
+print("days")
+for i in range(0, len(times.keys())):
+    print(times.keys()[i].dom + " " + str(times[i]))
+daytimes = proposedaytimes(3)
+print("times")
+for i in range(0, len(daytimes.keys())):
+    print(daytimes.keys()[i].dom + " " + str(daytimes[i]))
