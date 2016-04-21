@@ -13,7 +13,7 @@ from scipy import cluster as cl
 from matplotlib.colors import colorConverter
 from collections import namedtuple
 import copy
-import datetime
+import calendar
 import pandas as pd
 import os
 
@@ -39,6 +39,7 @@ class Action(object):
         self.link = link
         self.timestamp = tm.mktime(timeformat)
         self.color = color
+    
   
 class Domain(object):
     dom = ""
@@ -48,9 +49,58 @@ class Domain(object):
         self.dom = url
         self.urls = []
         
-        
+class CircularList():
+    items = []
+    def __init__(self): 
+        self.items = [[] for x in range(60*60*24)]
+    def add(self, domain, timestamp):
+       x = gettimeofday(timestamp)
+       if len(self.items[x]) == 0:
+            self.items[x] = []
+            self.items[x].append(domain.dom)
+    def getrange(self, timestamp, seconds):
+        x = gettimeofday(timestamp)
+        start = x - seconds
+        end = x + seconds        
+        alldomains = pd.Series()
+        if start < 0:
+            start = 60*60*24 - start
+            for i in range(x, end) + range(start, 60*60*24):
+                for dom in self.items[i]:
+                    if dom in alldomains.keys():
+                        val = alldomains.get_value(dom) + 1
+                        alldomains.set_value(dom, val)
+                    else:
+                        alldomains.set_value(dom, 1)
+        elif end > 60*60*24:
+            end = 0 + end
+            for i in range(0, end) + range(start, x):
+                for dom in self.items[i]:
+                    if dom in alldomains.keys():
+                        val = alldomains.get_value(dom) + 1
+                        alldomains.set_value(dom, val)
+                    else:
+                        alldomains.set_value(dom, 1)
+        else:
+            for i in range(start, end):
+                for dom in self.items[i]:
+                    if dom in alldomains.keys():
+                        val = alldomains.get_value(dom) + 1
+                        alldomains.set_value(dom, val)
+                    else:
+                        alldomains.set_value(dom, 1)
+        alldomains = alldomains.sort_values(ascending = False)
+        return alldomains
+     
+     
 Edge = namedtuple("Edge", ["previous", "current"])
-    
+
+def gettimeofday(timestamp):
+        time = tm.gmtime(timestamp)
+        hours = (time.tm_hour)*60*60
+        minutes = time.tm_min * 60
+        seconds = time.tm_sec
+        return hours + minutes + seconds   
         
 def line_prepender(filename, line):
     with open(filename, 'r+') as f:
@@ -127,7 +177,8 @@ def insertAction(action):
                     weekdays[weekday].set_value(dom2, 1)
                 weekdays[weekday] = weekdays[weekday].sort_values(ascending = False)
                 if not dom1.dom == dom2.dom:                    
-                    addtotime(tm.gmtime(action.timestamp).tm_hour+1, dom2)
+                    #addtotime(tm.gmtime(action.timestamp).tm_hour+1, dom2)
+                    daytime.add(dom2, action.timestamp)
                     G.add_edge(dom1, dom2)   
     lastnode = action
     
@@ -175,11 +226,10 @@ def traverse(G, source, current, maxi, trail, paths):
             
 def proposeweektimes(amount):
     #return weekdays[datetime.datetime.today().weekday()][:amount]
-    return weekdays[2][:amount]
+    return weekdays[0][:amount]
 def proposedaytimes(amount):
     #return gettime(datetime.datetime.today().hour)[:amount]
-    print(len(gettime(8)))
-    return gettime(10)[:amount]
+    return gettime(23)[:amount]
         
         
 def calculatescore(F, source, neighbor, current):
@@ -202,14 +252,16 @@ trails = [0] # A list of trailid's containing their urls
 trails[0] = []
 intertrails = []
 weekdays = {0:pd.Series(), 1:pd.Series(), 2:pd.Series(), 3:pd.Series(), 4:pd.Series(), 5:pd.Series(), 6:pd.Series()}
-daytime = {0:pd.Series(), 1:pd.Series(), 2:pd.Series(), 3:pd.Series(), 4:pd.Series(), 5:pd.Series(), 6:pd.Series(), 7:pd.Series()}
+#daytime = {0:pd.Series(), 1:pd.Series(), 2:pd.Series(), 3:pd.Series(), 4:pd.Series(), 5:pd.Series(), 6:pd.Series(), 7:pd.Series()}
+daytime = CircularList()
 lastnode = Action(None, None, None, tm.strptime("1980 1 1 1 1 1", "%Y %m %d %H %M %S"), None)
-
+'''
 plt.figure(figsize=(10,10))
 plt.axis('off') 
+'''
 F = nx.MultiDiGraph()
 G = nx.MultiDiGraph()
-path = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/allsets'
+path = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u1'
 for fi in os.listdir(path):
     print(fi)
     iterrows = iter(open(path + "/"+fi))
@@ -227,7 +279,7 @@ nx.draw_networkx_edges(F, nodepos, arrows=True)
 nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
 plt.show() 
 ''' 
-
+'''
 plt.figure(figsize=(10,10))
 plt.axis('off') 
 values = [colorConverter.to_rgba('y', alpha = index/(len(G.nodes()))) for index in range(0, len(G.nodes()))]
@@ -237,7 +289,7 @@ sizes = [len(node.urls)*1000 for node in G.nodes()]
 nx.draw_networkx_nodes(G, pos, node_color = values, node_size=sizes)
 nx.draw_networkx_edges(G, pos, arrows=True)
 nx.draw_networkx_labels(G, pos, labels ,font_size=10)
-
+'''
 #plt.show()
 print ("total domains: " + str(len(domains)))
 print("----")
@@ -256,7 +308,17 @@ times = proposeweektimes(3)
 print("days")
 for i in range(0, len(times.keys())):
     print(times.keys()[i].dom + " " + str(times[i]))
+    '''
 daytimes = proposedaytimes(3)
 print("times")
 for i in range(0, len(daytimes.keys())):
     print(daytimes.keys()[i].dom + " " + str(daytimes[i]))
+'''
+print(calendar.timegm(tm.gmtime()))
+daytimes = daytime.getrange(calendar.timegm(tm.gmtime()), 60*30)
+print("times")
+for i in range(0, len(daytimes.keys())):
+    print(daytimes.keys()[i] + " " + str(daytimes[i]))
+print(len(domains))
+print(len(clicks))
+print(len(trails))
