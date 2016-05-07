@@ -1,0 +1,61 @@
+#ml_suggestionbox {
+  position:absolute;
+  bottom: 0;
+  right: 0;
+  width:230px;
+  height: 20px;
+  border:1px solid #ffffff;
+  background-color:#333;
+  padding: 15px 5px 10px 25px;
+  -moz-box-shadow:-8px 8px 20px -6px #000;
+  -webkit-box-shadow:-8px 8px 20px -6px #000;
+  box-shadow:-8px 8px 20px -6px #000;
+  -moz-border-radius-topleft: 25px;
+  -webkit-border-top-left-radius: 25px;
+  border-top-left-radius: 25px;
+  -webkit-transition: height .5s ease;
+  -moz-transition: height .5s ease;
+  -ms-transition: height .5s ease;
+  -o-transition: height .5s ease;
+  transition: height .5s ease;
+}
+#ml_suggestionbox:hover{
+ height: 150px;
+}
+#ml_suggestionbox.expanded {
+ height: 150px;
+}
+#ml_suggestionbox h3{
+  color: #f5f5f5;
+  margin:0px;
+}
+
+#ml_suggestionbox .suggestions {
+  display: none;
+  color: #eee;
+  list-style: disc;
+  margin-left: 15px;
+  padding: 8px;
+  position: relative;
+  -webkit-transition: display .5s ease;
+  -moz-transition: display .5s ease;
+  -ms-transition: display .5s ease;
+  -o-transition: display .5s ease;
+  transition: display .5s ease;
+}
+#ml_suggestionbox.expanded .suggestions,
+#ml_suggestionbox.popup .suggestions{
+  display: block;
+}
+#ml_suggestionbox a,
+#ml_suggestionbox a:link,
+#ml_suggestionbox a:vistited {
+  color: #eee !important;
+  text-decoration: none !important;
+}
+#ml_suggestionbox a:hover,
+#ml_suggestionbox a:active {
+  color: #f5f5ff;
+  border-bottom: 1px solid #ffffff;
+  text-decoration: none;
+}
