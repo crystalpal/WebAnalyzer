@@ -20,7 +20,7 @@ import os
 
 
 file = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test.csv'
-file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_16J.csv'
+#file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_16J.csv'
 file2 = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_16J.csv'
 
 colors = ["red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold", 
@@ -143,8 +143,9 @@ def insertAction(action):
         #check how far the last unloaded page was in the past, and start a new trail if necessary
     add = False
     if action.timestamp - lastnode.timestamp > 60*60: # in seconds = 1 hour
-            trails.append([])
-            intertrails.append((lastnode, action))                  
+        trails.append([])
+        intertrails.append((lastnode, action))  
+                            
     else:       
         if action.action == "load":
             loads.append(action)
@@ -163,9 +164,10 @@ def insertAction(action):
                 if time > maxtime:
                     maxtime = time
                 if not (previous, action) in F:
-                    F.add_edge(previous, action, weight=0, trails = set())
+                    F.add_edge(previous, action, weight=0, time=0, trails = set())
                 trails[-1].append((previous, action, time))
-                F[previous][action][0]['weight'] += 3 
+                F[previous][action][0]['weight'] += 1
+                F[previous][action][0]['time'] += time/F[previous][action][0]['weight']
                 F[previous][action][0]['trails'].add(len(trails))
                 dom1 = domains[previous.domain]
                 dom2 = domains[action.domain]
@@ -238,7 +240,7 @@ def calculatescore(F, source, neighbor, current):
 #line_prepender(file2, 'time,action,link,other')  
 
 
-f = open(file1)
+f = open(file2)
 #data = csv.reader(f, delimiter=',')
 data = f
 
@@ -261,7 +263,9 @@ plt.axis('off')
 '''
 F = nx.MultiDiGraph()
 G = nx.MultiDiGraph()
-path = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u1'
+p1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u1'
+p2 = 'C:/Users/Joren//Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u1'
+path = p2
 for fi in os.listdir(path):
     print(fi)
     iterrows = iter(open(path + "/"+fi))
@@ -317,8 +321,9 @@ for i in range(0, len(daytimes.keys())):
 print(calendar.timegm(tm.gmtime()))
 daytimes = daytime.getrange(calendar.timegm(tm.gmtime()), 60*30)
 print("times")
+print(daytimes.keys())
 for i in range(0, len(daytimes.keys())):
-    print(daytimes.keys()[i] + " " + str(daytimes[i]))
+    print(daytimes.keys()[i].dom + " " + str(daytimes[i]))
 print(len(domains))
 print(len(clicks))
 print(len(trails))
