@@ -16,6 +16,7 @@ import copy
 import calendar
 import pandas as pd
 import os
+import sys
 
 
 
@@ -145,43 +146,42 @@ def insertAction(action):
     if action.timestamp - lastnode.timestamp > 60*60: # in seconds = 1 hour
         trails.append([])
         intertrails.append((lastnode, action))  
-                            
-    else:       
-        if action.action == "load":
-            loads.append(action)
-            if len(clicks) < 1 or not action.domain == clicks[-1].domain:
-                add = True
-        if action.action == "click" or add:
-            clicks.append(action)       
-            #check if the domain is already known in the system, if not initialize
-            if not action.domain in domains.keys():
-                domains[action.domain] = Domain(action.domain)
-            domains[action.domain].urls.append(action)
-            if len(clicks) > 1:
-                previous = clicks[-2]
-                urls[action.link] = action
-                time = action.timestamp - previous.timestamp
-                if time > maxtime:
-                    maxtime = time
-                if not (previous, action) in F:
-                    F.add_edge(previous, action, weight=0, time=0, trails = set())
-                trails[-1].append((previous, action, time))
-                F[previous][action][0]['weight'] += 1
-                F[previous][action][0]['time'] += time/F[previous][action][0]['weight']
-                F[previous][action][0]['trails'].add(len(trails))
-                dom1 = domains[previous.domain]
-                dom2 = domains[action.domain]
-                weekday = tm.gmtime(action.timestamp).tm_wday
-                if dom2 in weekdays[weekday].keys():
-                    val = weekdays[weekday].get_value(dom2) + 1
-                    weekdays[weekday].set_value(dom2, val)  
-                else:
-                    weekdays[weekday].set_value(dom2, 1)
-                weekdays[weekday] = weekdays[weekday].sort_values(ascending = False)
-                if not dom1.dom == dom2.dom:                    
-                    #addtotime(tm.gmtime(action.timestamp).tm_hour+1, dom2)
-                    daytime.add(dom2, action.timestamp)
-                    G.add_edge(dom1, dom2)   
+                                  
+    if action.action == "load":
+        loads.append(action)
+        if len(clicks) < 1 or not action.domain == clicks[-1].domain:
+            add = True
+    if action.action == "click" or add:
+        clicks.append(action)       
+        #check if the domain is already known in the system, if not initialize
+        if not action.domain in domains.keys():
+            domains[action.domain] = Domain(action.domain)
+        domains[action.domain].urls.append(action)
+        if len(clicks) > 1:
+            previous = clicks[-2]
+            urls[action.link] = action
+            time = action.timestamp - previous.timestamp
+            if time > maxtime:
+                maxtime = time
+            if not (previous.link, action.link) in F.edges():
+                F.add_edge(previous.link, action.link, weight=0, time=0, trails = set())
+            trails[-1].append((previous, action, time))
+            F[previous.link][action.link][0]['weight'] += 1
+            F[previous.link][action.link][0]['time'] = (F[previous.link][action.link][0]['time'] + time)/2
+            F[previous.link][action.link][0]['trails'].add(len(trails))
+            dom1 = domains[previous.domain]
+            dom2 = domains[action.domain]
+            weekday = tm.gmtime(action.timestamp).tm_wday
+            if dom2.dom in weekdays[weekday].keys():
+                val = weekdays[weekday].get_value(dom2.dom) + 1
+                weekdays[weekday].set_value(dom2.dom, val)  
+            else:
+                weekdays[weekday].set_value(dom2.dom, 1)
+            weekdays[weekday] = weekdays[weekday].sort_values(ascending = False)
+            if not dom1.dom == dom2.dom:                    
+                #addtotime(tm.gmtime(action.timestamp).tm_hour+1, dom2)
+                daytime.add(dom2, action.timestamp)
+                G.add_edge(dom1, dom2)   
     lastnode = action
     
     
@@ -219,23 +219,38 @@ def traverse(G, source, current, maxi, trail, paths):
         if n.timestamp - source.timestamp < 20:
             traverse(G, n, current, maxi, trail, paths)
         else:
-            score = calculatescore(F, source, n, current)
+            score = F[source.link][n.link][0]['weight']
             trail[0].append(n)
             trail[1] += score
             paths.append(copy.deepcopy(trail))   
             current += 1
             traverse(G, n, current, maxi, trail, paths)
+
+def listtraverse(G, source, paths, current, maxdepth, lookaheadtime):    
+    for n in G.neighbors(source):        
+        score = F[source][n][0]['weight']
+        if G[source][n][0]['time'] < lookaheadtime:
+            if current == maxdepth:
+                addtopath(paths, n, score)
+                return
+            listtraverse(G, n, paths, (current+1), maxdepth, lookaheadtime)            
+        else:
+            addtopath(paths, n, score)
+            
+def addtopath(paths, n, score):
+    if n in paths.keys():
+        paths[n] += score
+    else:
+        paths[n] = score
+            
             
 def proposeweektimes(amount):
     #return weekdays[datetime.datetime.today().weekday()][:amount]
     return weekdays[0][:amount]
 def proposedaytimes(amount):
     #return gettime(datetime.datetime.today().hour)[:amount]
-    return gettime(23)[:amount]
+    return gettime(14)[:amount]
         
-        
-def calculatescore(F, source, neighbor, current):
-    return F[source][neighbor][0]['weight']*0.8
 
 #line_prepender(file2, 'time,action,link,other')  
 
@@ -263,7 +278,7 @@ plt.axis('off')
 '''
 F = nx.MultiDiGraph()
 G = nx.MultiDiGraph()
-p1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u1'
+p1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/allsets'
 p2 = 'C:/Users/Joren//Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u1'
 path = p2
 for fi in os.listdir(path):
@@ -271,7 +286,6 @@ for fi in os.listdir(path):
     iterrows = iter(open(path + "/"+fi))
     for row in iterrows:
         parseClick(str(row))
-
 '''
 #F.add_edges_from(edges)
 nodevalues = [node.color for node in F.nodes()]
@@ -282,7 +296,7 @@ nx.draw_networkx_nodes(F, nodepos, cmap=plt.get_cmap('jet'), node_color = nodeva
 nx.draw_networkx_edges(F, nodepos, arrows=True)
 nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
 plt.show() 
-''' 
+'''
 '''
 plt.figure(figsize=(10,10))
 plt.axis('off') 
@@ -297,33 +311,42 @@ nx.draw_networkx_labels(G, pos, labels ,font_size=10)
 #plt.show()
 print ("total domains: " + str(len(domains)))
 print("----")
-proposed = clicks[0]
+proposed = clicks[30]
 
-paths = []
+paths = pd.Series()
 trail = [[],0]
-'''      
-traverse(F, proposed, 0, 3, trail, paths)
-for trail in paths:
-    for node in trail[0]:
-        print(node.link)
-    print(trail[1])
-'''    
-times = proposeweektimes(3)
-print("days")
-for i in range(0, len(times.keys())):
-    print(times.keys()[i].dom + " " + str(times[i]))
-    '''
-daytimes = proposedaytimes(3)
-print("times")
-for i in range(0, len(daytimes.keys())):
-    print(daytimes.keys()[i].dom + " " + str(daytimes[i]))
-'''
-print(calendar.timegm(tm.gmtime()))
-daytimes = daytime.getrange(calendar.timegm(tm.gmtime()), 60*30)
-print("times")
-print(daytimes.keys())
-for i in range(0, len(daytimes.keys())):
-    print(daytimes.keys()[i].dom + " " + str(daytimes[i]))
-print(len(domains))
-print(len(clicks))
-print(len(trails))
+
+weekproposals = proposeweektimes(3)
+dayproposals = daytime.getrange(tm.mktime(tm.strptime("2016 5 7 16 10 25", "%Y %m %d %H %M %S")), 15*60)[:10]
+timeproposals = pd.Series()
+
+print("time of day")
+print(dayproposals)
+print("day of week")
+print(weekproposals)
+
+for daydomain in dayproposals.keys():
+    for weekdomain in weekproposals.keys():
+        if daydomain == weekdomain:
+            count = dayproposals[daydomain]/7 + weekproposals[weekdomain]
+            if daydomain in timeproposals.keys():
+                timeproposals[daydomain] += count
+            else:
+                timeproposals[daydomain] = count
+            break
+
+timeproposals = timeproposals.sort_values(ascending = False)
+print(timeproposals)
+
+listtraverse(F, proposed.link, paths, 0, 8, 60)
+paths = paths.sort_values(ascending = False)
+for index in paths.keys():
+    print(str(index) + " " + str(paths[index]))
+    
+
+
+
+
+
+
+
