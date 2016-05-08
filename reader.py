@@ -14,6 +14,7 @@ from matplotlib.colors import colorConverter
 from collections import namedtuple
 import copy
 import calendar
+import datetime
 import pandas as pd
 import os
 import sys
@@ -142,16 +143,13 @@ def insertAction(action):
     global maxtime
     global domaintime
         #check how far the last unloaded page was in the past, and start a new trail if necessary
-    add = False
     if action.timestamp - lastnode.timestamp > 60*60: # in seconds = 1 hour
         trails.append([])
         intertrails.append((lastnode, action))  
                                   
     if action.action == "load":
         loads.append(action)
-        if len(clicks) < 1 or not action.domain == clicks[-1].domain:
-            add = True
-    if action.action == "click" or add:
+    if action.action == "click":
         clicks.append(action)       
         #check if the domain is already known in the system, if not initialize
         if not action.domain in domains.keys():
@@ -179,63 +177,51 @@ def insertAction(action):
                 weekdays[weekday].set_value(dom2.dom, 1)
             weekdays[weekday] = weekdays[weekday].sort_values(ascending = False)
             if not dom1.dom == dom2.dom:                    
-                #addtotime(tm.gmtime(action.timestamp).tm_hour+1, dom2)
                 daytime.add(dom2, action.timestamp)
                 G.add_edge(dom1, dom2)   
     lastnode = action
-    
-    
-def gettime(hour):
-    if 7 <= hour < 10:
-        return daytime[0]
-    elif 10 <= hour < 12:
-        return daytime[1]
-    elif 12 <= hour < 14:
-        return daytime[2]
-    elif 14 <= hour < 16:
-        return daytime[3]
-    elif 16 <= hour < 18:
-        return daytime[4]
-    elif 18 <= hour < 22:
-        return daytime[5]
-    elif hour > 22 or hour <= 1:
-        return daytime[6]
-    else:
-        return daytime[7]
-        
-def addtotime(hour, action):
-    timeday = gettime(hour)
-    if action in timeday.keys():
-        val = timeday.get_value(action) + 1
-        timeday.set_value(action, val)
-    else:
-        timeday.set_value(action, 1)
-    timeday = timeday.sort_values(ascending = False)
                 
-def traverse(G, source, current, maxi, trail, paths):
+def dtraverse(G, source, current, maxi, trail, paths):
     if current == maxi:
         return
     for n in G.neighbors(source):
         if n.timestamp - source.timestamp < 20:
-            traverse(G, n, current, maxi, trail, paths)
+            dtraverse(G, n, current, maxi, trail, paths)
         else:
             score = F[source.link][n.link][0]['weight']
             trail[0].append(n)
             trail[1] += score
             paths.append(copy.deepcopy(trail))   
             current += 1
-            traverse(G, n, current, maxi, trail, paths)
+            dtraverse(G, n, current, maxi, trail, paths)
 
-def listtraverse(G, source, paths, current, maxdepth, lookaheadtime):    
-    for n in G.neighbors(source):        
-        score = F[source][n][0]['weight']
+def depthtraverse(G, source, paths, current, maxdepth, lookaheadtime):    
+    for n in G.neighbors(source):  
+        score = G[source][n][0]['weight']
         if G[source][n][0]['time'] < lookaheadtime:
             if current == maxdepth:
                 addtopath(paths, n, score)
                 return
-            listtraverse(G, n, paths, (current+1), maxdepth, lookaheadtime)            
+            depthtraverse(G, n, paths, (current+1), maxdepth, lookaheadtime)            
         else:
             addtopath(paths, n, score)
+
+def breathtraverse(G, queue, paths, maxdepth, lookaheadtime):
+    for idx in range(0, len(queue)):
+        q = queue.pop(0)
+        node, current = q[0], q[1]        
+        for n in G.neighbors(node): 
+            score = G[node][n][0]['weight']
+            if current == maxdepth:
+                addtopath(paths, n, score)
+                return   
+            if G[node][n][0]['time'] > lookaheadtime:
+                addtopath(paths, n, score)
+                queue.append((n, (current+1)))
+            else:                        
+                queue.append((n,current))
+    breathtraverse(G, queue, paths, maxdepth, lookaheadtime)
+    
             
 def addtopath(paths, n, score):
     if n in paths.keys():
@@ -244,12 +230,11 @@ def addtopath(paths, n, score):
         paths[n] = score
             
             
-def proposeweektimes(amount):
-    #return weekdays[datetime.datetime.today().weekday()][:amount]
-    return weekdays[0][:amount]
-def proposedaytimes(amount):
-    #return gettime(datetime.datetime.today().hour)[:amount]
-    return gettime(14)[:amount]
+def proposeweektimes(proposed, amount):
+    return weekdays[datetime.datetime.utcfromtimestamp(proposed.timestamp).weekday()][:amount]
+
+def proposedaytimes(proposed, r, amount):
+    return daytime.getrange(proposed.timestamp, r)[:amount]
         
 
 #line_prepender(file2, 'time,action,link,other')  
@@ -279,7 +264,7 @@ plt.axis('off')
 F = nx.MultiDiGraph()
 G = nx.MultiDiGraph()
 p1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/allsets'
-p2 = 'C:/Users/Joren//Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u1'
+p2 = 'C:/Users/Joren//Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u4'
 path = p2
 for fi in os.listdir(path):
     print(fi)
@@ -309,39 +294,115 @@ nx.draw_networkx_edges(G, pos, arrows=True)
 nx.draw_networkx_labels(G, pos, labels ,font_size=10)
 '''
 #plt.show()
+
+def combinetimeproposals(dayproposals, weekproposals):
+    timeproposals = pd.Series()
+    for daydomain in dayproposals.keys():
+        if daydomain in weekproposals.keys():
+            #divide by 7 and 8, reducing the influence one single outburst has
+            count = dayproposals[daydomain]/7 + weekproposals[daydomain]/8
+            timeproposals[daydomain] = count
+        else:
+            timeproposals[daydomain] = dayproposals[daydomain]
+    #calculate belief of timeproposals
+    if(len(timeproposals) > 0):
+        avgscore = float(sum(timeproposals.values)/len(timeproposals.values)) - 1/len(timeproposals.values)
+    else:
+        avgscore = 0
+    timeproposals = pd.Series({proposal:timeproposals[proposal] for proposal in timeproposals.keys() if timeproposals[proposal] > avgscore})
+    print("timeproposals")
+    print(timeproposals)
+    return timeproposals.sort_values(ascending = False)
+
+def domainsuggestions(paths, urls):
+    domainsuggestions = pd.Series()
+    for index in paths.keys():
+        if urls[index].domain in domainsuggestions:
+            domainsuggestions[urls[index].domain].append(index)
+        else:
+            domainsuggestions[urls[index].domain] = [index]
+    print("domainsuggestions")
+    print(domainsuggestions)
+    return domainsuggestions
+    
+def combinesuggestionstime(timeproposals, domainsuggestions):
+    suggestions = []
+    fill = 4 - len(timeproposals)
+    print(fill)
+    for domain in timeproposals.keys()[:2]:
+        if domain in domainsuggestions.keys():
+            for d in domainsuggestions[domain][:2]: 
+                suggestions.append(d)
+    for domain in timeproposals.keys()[2:4]:
+        if domain in domainsuggestions.keys():
+             for d in domainsuggestions[domain][0]:                
+                suggestions.append(d)
+    if fill > 0:
+        domains = [x for x in domainsuggestions.keys() if x not in timeproposals.keys()[:4]]
+        for domain in domains[:fill]:
+            for d in domainsuggestions[domain][:1]:   
+                suggestions.append(d)
+    return suggestions
+    
+def combinesuggestions(timeproposals, domainsuggestions, urls, amount):
+    suggestions = []
+    for domain in domainsuggestions.keys()[:1]:
+        for d in domainsuggestions[domain][:2]: 
+            if d not in suggestions:
+                suggestions.append(d)  
+    for domain in domainsuggestions.keys()[1:3]:
+        for d in domainsuggestions[domain][:1]: 
+            if d not in suggestions:             
+                suggestions.append(d)
+    domains = [x for x in timeproposals.keys() if x not in [y for y in suggestions]]
+    for domain in domains:
+        if domain in domainsuggestions:  
+            for d in domainsuggestions[domain][:1]: 
+                if d not in suggestions:
+                    suggestions.append(d)
+                    break
+    if len(suggestions) < amount:
+        for domain in domainsuggestions.keys():
+            for d in domainsuggestions[domain][:1]: 
+                if d not in suggestions:             
+                    suggestions.append(d)
+                    if len(suggestions) == amount:
+                        return suggestions
+    return suggestions
+
+def suggestcontinuation(url, urls):
+    global F
+    dayproposals = proposedaytimes(proposed, 15*60, 10)
+    weekproposals = proposeweektimes(proposed, 3)
+    timeproposals = combinetimeproposals(dayproposals, weekproposals)
+    paths = pd.Series()
+    #trail = [[],0]
+    breathtraverse(F, [(proposed.link, 0)], paths, 8, 10)
+    paths = paths.sort_values(ascending = False)
+    domainproposals = domainsuggestions(paths, urls)
+    return combinesuggestions(timeproposals, domainproposals, urls, 5)
+
+    
 print ("total domains: " + str(len(domains)))
 print("----")
-proposed = clicks[30]
+proposed = clicks[70]
+print("current: " + proposed.link)
 
-paths = pd.Series()
-trail = [[],0]
+suggestions = suggestcontinuation(proposed, urls)
+for click in clicks[71:79]:
+    print(click.link)
+print("-----------------------------")
+for sug in suggestions:
+    print(sug)
 
-weekproposals = proposeweektimes(3)
-dayproposals = daytime.getrange(tm.mktime(tm.strptime("2016 5 7 16 10 25", "%Y %m %d %H %M %S")), 15*60)[:10]
-timeproposals = pd.Series()
 
-print("time of day")
-print(dayproposals)
-print("day of week")
-print(weekproposals)
 
-for daydomain in dayproposals.keys():
-    for weekdomain in weekproposals.keys():
-        if daydomain == weekdomain:
-            count = dayproposals[daydomain]/7 + weekproposals[weekdomain]
-            if daydomain in timeproposals.keys():
-                timeproposals[daydomain] += count
-            else:
-                timeproposals[daydomain] = count
-            break
 
-timeproposals = timeproposals.sort_values(ascending = False)
-print(timeproposals)
+        
 
-listtraverse(F, proposed.link, paths, 0, 8, 60)
-paths = paths.sort_values(ascending = False)
-for index in paths.keys():
-    print(str(index) + " " + str(paths[index]))
+
+    
+    
     
 
 
