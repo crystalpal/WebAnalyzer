@@ -12,6 +12,7 @@ import socketserver
 import datetime
 import atexit
 import signal
+from reader import parseAction
 
 date = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 filename = "urls_{}.csv".format(date)
@@ -57,21 +58,22 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
             action_str = action
             target = ''
             print('{:<15}: {}'.format(action_str, url))
-        print('"'+ts+'", "'+action_str+'", "'+url+'", "'+target+'"',
-              file=logfile)
-        # TODO: Call your model to learn from url and build up a list of next
-        # guesses guesses = myModel.get_guesses(url, html)
-        response = {
-            'success': True,
-            'guesses': [['https://dtai.cs.kuleuven.be/events/leuveninc-visionary-seminar-machine-learning-smarter-world', 0.9],
-                        ['link2_todo', 0.5]]
-        }
-        jsonstr = bytes(json.dumps(response), "UTF-8")
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.send_header("Content-length", len(jsonstr))
-        self.end_headers()
-        self.wfile.write(jsonstr)
+        inp = ts + ", " + action_str + ", " + url + ", " + target
+        print(inp, file=logfile)
+        suggestions  = parseAction(inp)
+        print(suggestions)
+        if not suggestions == None:
+            response = {
+                'success': True,
+                'guesses': suggestions
+            }
+            jsonstr = bytes(json.dumps(response), "UTF-8")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Content-length", len(jsonstr))
+            self.end_headers()
+            self.wfile.write(jsonstr)
+           
 
 
 def start_from_csv(filenames):

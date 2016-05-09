@@ -18,12 +18,7 @@ import datetime
 import pandas as pd
 import os
 import sys
-
-
-
-file = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test.csv'
-#file1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_16J.csv'
-file2 = 'C:/Users/Joren/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/test/march_16J.csv'
+import cPickle as pickle
 
 colors = ["red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold", 
           "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"          
@@ -147,8 +142,6 @@ def insertAction(action):
         trails.append([])
         intertrails.append((lastnode, action))  
                                   
-    if action.action == "load":
-        loads.append(action)
     if action.action == "click":
         clicks.append(action)       
         #check if the domain is already known in the system, if not initialize
@@ -237,13 +230,6 @@ def proposedaytimes(proposed, r, amount):
     return daytime.getrange(proposed.timestamp, r)[:amount]
         
 
-#line_prepender(file2, 'time,action,link,other')  
-
-
-f = open(file2)
-#data = csv.reader(f, delimiter=',')
-data = f
-
 loads = []
 clicks = [] # A list containing every click action
 domains = {} # A dictionary mapping domain names on domain objects
@@ -263,6 +249,7 @@ plt.axis('off')
 '''
 F = nx.MultiDiGraph()
 G = nx.MultiDiGraph()
+'''
 p1 = 'F:/Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/allsets'
 p2 = 'C:/Users/Joren//Dropbox/Vince - Joren/Master Ai/Machine Learning - Project/Datasets/u4'
 path = p2
@@ -271,6 +258,7 @@ for fi in os.listdir(path):
     iterrows = iter(open(path + "/"+fi))
     for row in iterrows:
         parseClick(str(row))
+'''
 '''
 #F.add_edges_from(edges)
 nodevalues = [node.color for node in F.nodes()]
@@ -370,19 +358,30 @@ def combinesuggestions(timeproposals, domainsuggestions, urls, amount):
                         return suggestions
     return suggestions
 
-def suggestcontinuation(url, urls):
+def suggestcontinuation(action):
     global F
-    dayproposals = proposedaytimes(proposed, 15*60, 10)
-    weekproposals = proposeweektimes(proposed, 3)
+    global urls
+    dayproposals = proposedaytimes(action, 15*60, 10)
+    weekproposals = proposeweektimes(action, 3)
     timeproposals = combinetimeproposals(dayproposals, weekproposals)
     paths = pd.Series()
     #trail = [[],0]
-    breathtraverse(F, [(proposed.link, 0)], paths, 8, 10)
+    breathtraverse(F, [(action.link, 0)], paths, 8, 10)
     paths = paths.sort_values(ascending = False)
     domainproposals = domainsuggestions(paths, urls)
     return combinesuggestions(timeproposals, domainproposals, urls, 5)
 
-    
+ 
+def parseAction(inputline):
+    action = extractAction(inputline)
+    insertAction(action)
+    if action.action == "click":
+        return suggestcontinuation(action)   
+
+if __name__ == "__main__":
+    sys.exit(main())
+   
+'''
 print ("total domains: " + str(len(domains)))
 print("----")
 proposed = clicks[70]
@@ -394,7 +393,7 @@ for click in clicks[71:79]:
 print("-----------------------------")
 for sug in suggestions:
     print(sug)
-
+'''
 
 
 
