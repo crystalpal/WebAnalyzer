@@ -145,11 +145,11 @@ try {
 
       var suggestions = "";
       $.each(data.guesses, function(index, val) {
-        var name = val[0].replace("http://", "")
+        var name = val.replace("http://", "")
                          .replace("https://", "")
                          .split('/')[0];
         suggestions += '<li>';
-        suggestions +='<a href="'+val[0]+'" title="Probability: '+val[1]+'">';
+        suggestions +='<a href="'+val+'" title="Full link: '+val+'" style="color:#eee;text-decoration: none;">';
         suggestions += name + '</a></li>';
       });
       $("#ml_suggestionbox").append('<ul class="suggestions">'
