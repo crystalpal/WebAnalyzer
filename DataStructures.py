@@ -18,11 +18,11 @@ class Action(object):
   
 class Domain(object):
     dom = ""
-    urls = []
+    urls = pd.Series()
     trail = 0
     def __init__(self, url):
         self.dom = url
-        self.urls = []
+        self.urls = pd.Series()
         
 class CircularList():
     items = []

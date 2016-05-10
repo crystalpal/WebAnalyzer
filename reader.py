@@ -93,6 +93,10 @@ class Proposer(object):
             #check if the domain is already known in the system, if not initialize
             if not action.domain in self.domains.keys():
                 self.domains[action.domain] = Domain(action.domain)
+            if not action.link in action.domain.urls.keys():
+                action.domain.urls.append(action.link)
+            action.domain.urls[action.link] += 1
+            action.domain.urls.sort_values(ascending = False)
             self.domains[action.domain].urls.append(action)
             if len(self.clicks) > 1:
                 previous = self.clicks[-2]
@@ -135,14 +139,14 @@ class Proposer(object):
         breathtraverse(self.F, [(action.link, 0)], paths, 8, 10)
         paths = paths.sort_values(ascending = False)
         domainproposals = domainsuggestions(paths, self.urls)
-        return combinesuggestions(timeproposals, domainproposals, self.urls, 5)        
+        selfproposals = selfsuggestions(action)
+        return combinesuggestions(timeproposals, domainproposals, selfproposals, self.urls, 5)        
         
     def suggeststart(self):
         dayproposals = self.proposedaytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60, 10)
         weekproposals = self.proposeweektimes(datetime.datetime.utcfromtimestamp(tm.time()), 3)
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
         trailproposals = [x.domain for (y,x) in self.intertrails]
-        
         proposals = []
         domainproposals = []
         for timeproposal in timeproposals:
