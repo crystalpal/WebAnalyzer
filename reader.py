@@ -13,8 +13,8 @@ import pandas as pd
 import os
 import sys
 from DataStructures import Action, Domain, CircularList
-from Utilities import addtopath, proposedaytimes, proposeweektimes, combinetimeproposals, domainsuggestions, combinesuggestions
-
+from Utilities import proposedaytimes, proposeweektimes, combinetimeproposals, domainsuggestions, combinesuggestions
+from Traverse import breathtraverse
 
 class Proposer(object):
     
@@ -40,19 +40,17 @@ class Proposer(object):
           "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"]  
  
         self.fillstructures(path)
-        
- 
-    def line_prepender(filename, line):
-        with open(filename, 'r+') as f:
-            content = f.read()
-            content = content.replace(", ", ",")
-            content = content.replace('"', "")
-            f.seek(0, 0)
-            f.write(line.rstrip('\r\n') +  '\n' + content)
+    
+           
+    def fillstructures(self, path):
+        for file in os.listdir(path):
+            iterrows = iter(open(path + "/"+file))
+            for row in iterrows:
+                self.parseClick(str(row))    
     
     def parseClick(self, inputline):
         action = self.extractAction(inputline)
-        self.insertAction(action)
+        self.insertAction(self.F, self.G, action)
     
     def extractAction(self, inputline):
         inputline = inputline.replace("\"", "")
@@ -76,7 +74,7 @@ class Proposer(object):
         timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")          
         return Action(act, domain, link, timeformat, self.colors[len(self.clicks)%9])
 
-    def insertAction(self, action):
+    def insertAction(self, G, D, action):
             #check how far the last unloaded page was in the past, and start a new trail if necessary
         if action.timestamp - self.lastnode.timestamp > 60*60: # in seconds = 1 hour
             self.trails.append([])
@@ -90,16 +88,16 @@ class Proposer(object):
             self.domains[action.domain].urls.append(action)
             if len(self.clicks) > 1:
                 previous = self.clicks[-2]
-                urls[action.link] = action
+                self.urls[action.link] = action
                 time = action.timestamp - previous.timestamp
                 if time > self.maxtime:
                     self.maxtime = time
-                if not (previous.link, action.link) in F.edges():
-                    F.add_edge(previous.link, action.link, weight=0, time=0, trails = set())
+                if not (previous.link, action.link) in G.edges():
+                    G.add_edge(previous.link, action.link, weight=0, time=0, trails = set())
                 self.trails[-1].append((previous, action, time))
-                self.F[previous.link][action.link][0]['weight'] += 1
-                self.F[previous.link][action.link][0]['time'] = (self.F[previous.link][action.link][0]['time'] + time)/2
-                self.F[previous.link][action.link][0]['trails'].add(len(self.trails))
+                G[previous.link][action.link][0]['weight'] += 1
+                G[previous.link][action.link][0]['time'] = (G[previous.link][action.link][0]['time'] + time)/2
+                G[previous.link][action.link][0]['trails'].add(len(self.trails))
                 dom1 = self.domains[previous.domain]
                 dom2 = self.domains[action.domain]
                 weekday = tm.gmtime(action.timestamp).tm_wday
@@ -111,82 +109,35 @@ class Proposer(object):
                 self.weekdays[weekday] = self.weekdays[weekday].sort_values(ascending = False)
                 if not dom1.dom == dom2.dom:                    
                     self.daytime.add(dom2, action.timestamp)
-                    self.G.add_edge(dom1, dom2)   
+                    D.add_edge(dom1, dom2)   
         self.lastnode = action
-                
-    def dtraverse(self, G, source, current, maxi, trail, paths):
-        if current == maxi:
-            return
-        for n in G.neighbors(source):
-            if n.timestamp - source.timestamp < 20:
-                self.dtraverse(G, n, current, maxi, trail, paths)
-            else:
-                score = F[source.link][n.link][0]['weight']
-                trail[0].append(n)
-                trail[1] += score
-                paths.append(copy.deepcopy(trail))   
-                current += 1
-                self.dtraverse(G, n, current, maxi, trail, paths)
+        
+    def parseAction(self, inputline):
+        action = self.extractAction(inputline)
+        self.insertAction(action)
+        if action.action == "click":
+            return self.suggestcontinuation(action)   
     
-    def depthtraverse(self, G, source, paths, current, maxdepth, lookaheadtime):    
-        for n in G.neighbors(source):  
-            score = G[source][n][0]['weight']
-            if G[source][n][0]['time'] < lookaheadtime:
-                if current == maxdepth:
-                    addtopath(paths, n, score)
-                    return
-                self.depthtraverse(G, n, paths, (current+1), maxdepth, lookaheadtime)            
-            else:
-                addtopath(paths, n, score)
-
-    def breathtraverse(self, G, queue, paths, maxdepth, lookaheadtime):
-        if len(queue) == 0:
-            return
-        for idx in range(0, len(queue)):
-            q = queue.pop(0)
-            node, current = q[0], q[1]        
-            for n in G.neighbors(node): 
-                score = G[node][n][0]['weight']
-                if current == maxdepth:
-                    addtopath(paths, n, score)
-                    return   
-                if G[node][n][0]['time'] > lookaheadtime:
-                    addtopath(paths, n, score)
-                    queue.append((n, (current+1)))
-                else:                        
-                    queue.append((n,current))
-        self.breathtraverse(G, queue, paths, maxdepth, lookaheadtime)
+    def suggestcontinuation(self, action):
+        dayproposals = proposedaytimes(action, 15*60, 10)
+        weekproposals = proposeweektimes(action, 3)
+        timeproposals = combinetimeproposals(dayproposals, weekproposals)
+        paths = pd.Series()
+        #trail = [[],0]
+        breathtraverse(self.F, [(action.link, 0)], paths, 8, 10)
+        paths = paths.sort_values(ascending = False)
+        domainproposals = domainsuggestions(paths, self.urls)
+        return combinesuggestions(timeproposals, domainproposals, self.urls, 5)
             
     def proposeweektimes(self, proposed, amount):
         return self.weekdays[datetime.datetime.utcfromtimestamp(proposed.timestamp).weekday()][:amount]
 
     def proposedaytimes(self, proposed, r, amount):
         return self.daytime.getrange(proposed.timestamp, r)[:amount]
-           
-    def fillstructures(self, path):
-        for file in os.listdir(path):
-            iterrows = iter(open(path + "/"+file))
-            for row in iterrows:
-                self.parseClick(str(row))
+
                 
-    def suggestcontinuation(self, action):
-        global F
-        global urls
-        dayproposals = proposedaytimes(action, 15*60, 10)
-        weekproposals = proposeweektimes(action, 3)
-        timeproposals = combinetimeproposals(dayproposals, weekproposals)
-        paths = pd.Series()
-        #trail = [[],0]
-        self.breathtraverse(F, [(action.link, 0)], paths, 8, 10)
-        paths = paths.sort_values(ascending = False)
-        domainproposals = domainsuggestions(paths, urls)
-        return combinesuggestions(timeproposals, domainproposals, urls, 5)
+   
     
-    def parseAction(self, inputline):
-        action = self.extractAction(inputline)
-        self.insertAction(action)
-        if action.action == "click":
-            return self.suggestcontinuation(action)   
    
 '''
 print ("total domains: " + str(len(domains)))

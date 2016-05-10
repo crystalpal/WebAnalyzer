@@ -1,6 +1,14 @@
 import time as tm
 import pandas as pd
 
+def line_prepender(filename, line):
+        with open(filename, 'r+') as f:
+            content = f.read()
+            content = content.replace(", ", ",")
+            content = content.replace('"', "")
+            f.seek(0, 0)
+            f.write(line.rstrip('\r\n') +  '\n' + content)
+
 def gettimeofday(timestamp):
         time = tm.gmtime(timestamp)
         hours = (time.tm_hour)*60*60
