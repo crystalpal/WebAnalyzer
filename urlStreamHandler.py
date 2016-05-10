@@ -12,7 +12,7 @@ import socketserver
 import datetime
 import atexit
 import signal
-from reader import parseAction
+import reader
 
 date = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 filename = "urls_{}.csv".format(date)
@@ -60,12 +60,16 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
             print('{:<15}: {}'.format(action_str, url))
         inp = ts + ", " + action_str + ", " + url + ", " + target
         print(inp, file=logfile)
-        suggestions  = parseAction(inp)
+        suggestions  = reader.parseAction(inp)
         print(suggestions)
         if not suggestions == None:
             response = {
                 'success': True,
                 'guesses': suggestions
+            }
+        else :
+            response = {
+                'success': False
             }
             jsonstr = bytes(json.dumps(response), "UTF-8")
             self.send_response(200)
@@ -105,5 +109,6 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    
     sys.exit(main())
 

@@ -13,7 +13,7 @@ import pandas as pd
 import os
 import sys
 from DataStructures import Action, Domain, CircularList
-from Utilities import proposedaytimes, proposeweektimes, combinetimeproposals, domainsuggestions, combinesuggestions
+from Utilities import combinetimeproposals, domainsuggestions, combinesuggestions
 from Traverse import breathtraverse
 
 class Proposer(object):
