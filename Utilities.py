@@ -25,10 +25,10 @@ def addtopath(paths, n, score):
 def domainsuggestions(paths, urls):
         domainsuggestions = pd.Series()
         for index in paths.keys():
-            if urls[index].domain in domainsuggestions:
-                domainsuggestions[urls[index].domain].append(index)
+            if urls[index].domain.dom in domainsuggestions:
+                domainsuggestions[urls[index].domain.dom].append(index)
             else:
-                domainsuggestions[urls[index].domain] = [index]
+                domainsuggestions[urls[index].domain.dom] = [index]
         print("domainsuggestions")
         print(domainsuggestions)
         return domainsuggestions
@@ -70,15 +70,17 @@ def combinesuggestions(current, timeproposals, domainsuggestions, urls, amount):
                     suggestions.append(d)
                     break
     if len(suggestions) < amount:
+        for i in range(0, len(suggestions) - amount):
+            suggestions.append(current.domain.urls[i])
+    '''        
+    if len(suggestions) < amount:
         for domain in domainsuggestions.keys():
             for d in domainsuggestions[domain][:1]: 
                 if d not in suggestions:             
                     suggestions.append(d)
                     if len(suggestions) == amount:
                         return suggestions
-    if len(suggestions) < amount:
-        for i in range(0, len(suggestions) - amount):
-            suggestions.append(current.domain.urls[i])
+    '''
     return suggestions
     
 def combinetimeproposals(dayproposals, weekproposals):

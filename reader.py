@@ -45,13 +45,13 @@ class Proposer(object):
     def fillstructures(self, path):
         count = 0
         for file in os.listdir(path):
-            try:
+           try:
                 iterrows = iter(open(path + "/"+file))
                 for row in iterrows:
                     if not row.rstrip():
                         continue
                     self.parseClick(str(row.rstrip()))  
-            except:
+           except:
                 count += 1
                 print("skipped file ", file)
         print("Skipped files: ",count)
@@ -80,6 +80,7 @@ class Proposer(object):
         minute = timestamp[14:-8]
         second = timestamp[17:-5]
         timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")          
+
         if not domain in self.domains.keys():
             self.domains[domain] = Domain(domain)        
         return Action(act, self.domains[domain], link, timeformat, self.colors[len(self.clicks)%9])
@@ -110,8 +111,8 @@ class Proposer(object):
                 G[previous.link][action.link][0]['weight'] += 1
                 G[previous.link][action.link][0]['time'] = (G[previous.link][action.link][0]['time'] + time)/2
                 G[previous.link][action.link][0]['trails'].add(len(self.trails))
-                dom1 = self.domains[previous.domain]
-                dom2 = self.domains[action.domain]
+                dom1 = previous.domain
+                dom2 = action.domain
                 weekday = tm.gmtime(action.timestamp).tm_wday
                 if dom2.dom in self.weekdays[weekday].keys():
                     val = self.weekdays[weekday].get_value(dom2.dom) + 1
@@ -139,8 +140,7 @@ class Proposer(object):
         breathtraverse(self.F, [(action.link, 0)], paths, 8, 10)
         paths = paths.sort_values(ascending = False)
         domainproposals = domainsuggestions(paths, self.urls)
-        selfproposals = selfsuggestions(action)
-        return combinesuggestions(timeproposals, domainproposals, selfproposals, self.urls, 5)        
+        return combinesuggestions(action, timeproposals, domainproposals, self.urls, 5)        
         
     def suggeststart(self):
         dayproposals = self.proposedaytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60, 10)
