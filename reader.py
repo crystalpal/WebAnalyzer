@@ -41,24 +41,33 @@ class Proposer(object):
  
         self.fillstructures(path)
     
-           
+
+    def clean_file_row(self, input):
+        input = input.rstrip()         # Remove \n
+        input = "".join(input.split()) # Remove all whitespaces
+        input = input.replace("\"", "")# Remove all extra double quotes
+        return input
+    
     def fillstructures(self, path):
         count = 0
         for file in os.listdir(path):
-           try:
+            try:
                 iterrows = iter(open(path + "/"+file))
                 for row in iterrows:
-                    if not row.rstrip():
+                    row = self.clean_file_row(row)
+                    # if an empty row (eg end of file) or if not a click action
+                    if not row and not "javascript" in row.lower(): # and not row.split(",")[1] == "click":
                         continue
-                    self.parseClick(str(row.rstrip()))  
-           except:
+                    self.parseClick(str(row))
+            except:
                 count += 1
                 print("skipped file ", file)
         print("Skipped files: ",count)
     
     def parseClick(self, inputline):
         action = self.extractAction(inputline)
-        self.insertAction(self.F, self.G, action)
+        if not action == None:
+            self.insertAction(self.F, self.G, action)
     
     def extractAction(self, inputline):
         inputline = inputline.replace("\"", "")
@@ -66,10 +75,9 @@ class Proposer(object):
         row = inputline.split(',')
         timestamp = row[0]
         act = row[1]
-        if act == "click":
+        if act == "click" and "//" in row[3]:
             link = row [3]
-            domain = link[link.index('//')+2:link.index('/', link.index('//'))]
-            domain = link[link.index('//')+2:link.index('/', 12)]
+            domain = link[link.index('//')+2:link.index('/', link.index('//')+2)]
             domain = domain.replace("www.", "")  
             domain = domain[:domain.rindex('.')]
             if "google" in link and "&" in link:
