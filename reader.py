@@ -66,70 +66,73 @@ class Proposer(object):
         row = inputline.split(',')
         timestamp = row[0]
         act = row[1]
-        link = row [2]
-        domain = link[link.index('//')+2:link.index('/', link.index('//'))]
-        domain = link[link.index('//')+2:link.index('/', 12)]
-        domain = domain.replace("www.", "")  
-        domain = domain[:domain.rindex('.')]
-        if "google" in link and "&" in link:
-            link = link[0:link.index('&')]
-        year = timestamp[:4]
-        month = timestamp[5:-17]
-        day = timestamp[8:-14]
-        hour = timestamp[11:-11]
-        minute = timestamp[14:-8]
-        second = timestamp[17:-5]
-        timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")          
-
-        if not domain in self.domains.keys():
-            self.domains[domain] = Domain(domain)        
-        return Action(act, self.domains[domain], link, timeformat, self.colors[len(self.clicks)%9])
+        if act == "click":
+            link = row [3]
+            domain = link[link.index('//')+2:link.index('/', link.index('//'))]
+            domain = link[link.index('//')+2:link.index('/', 12)]
+            domain = domain.replace("www.", "")  
+            domain = domain[:domain.rindex('.')]
+            if "google" in link and "&" in link:
+                link = link[0:link.index('&')]
+            year = timestamp[:4]
+            month = timestamp[5:-17]
+            day = timestamp[8:-14]
+            hour = timestamp[11:-11]
+            minute = timestamp[14:-8]
+            second = timestamp[17:-5]
+            timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")          
+    
+            if not domain in self.domains.keys():
+                self.domains[domain] = Domain(domain)        
+            return Action(act, self.domains[domain], link, timeformat, self.colors[len(self.clicks)%9])
+        else:
+            return None
 
     def insertAction(self, G, D, action):
             #check how far the last unloaded page was in the past, and start a new trail if necessary
         if action.timestamp - self.lastnode.timestamp > 60*60: # in seconds = 1 hour
             self.trails.append([])
             self.intertrails.append((self.lastnode, action))  
-                                      
-        if action.action == "click":
-            self.clicks.append(action)       
-            #check if the domain is already known in the system, if not initialize
-            if not action.link in action.domain.urls.keys():
-                action.domain.urls.set_value(action.link,1)
+        self.clicks.append(action)       
+        #check if the domain is already known in the system, if not initialize
+        if not action.link in action.domain.urls.keys():
+            action.domain.urls.set_value(action.link,1)
+        else:
+            action.domain.urls[action.link] += 1
+        action.domain.urls.sort_values(ascending = False)
+        if len(self.clicks) > 1:
+            previous = self.clicks[-2]
+            self.urls[action.link] = action
+            time = action.timestamp - previous.timestamp
+            if time > self.maxtime:
+                self.maxtime = time
+            if not (previous.link, action.link) in G.edges():
+                G.add_edge(previous.link, action.link, weight=0, time=0, trails = set())
+            self.trails[-1].append((previous, action, time))
+            G[previous.link][action.link][0]['weight'] += 1
+            G[previous.link][action.link][0]['time'] = (G[previous.link][action.link][0]['time'] + time)/2
+            G[previous.link][action.link][0]['trails'].add(len(self.trails))
+            dom1 = previous.domain
+            dom2 = action.domain
+            weekday = tm.gmtime(action.timestamp).tm_wday
+            if dom2.dom in self.weekdays[weekday].keys():
+                val = self.weekdays[weekday].get_value(dom2.dom) + 1
+                self.weekdays[weekday].set_value(dom2.dom, val)  
             else:
-                action.domain.urls[action.link] += 1
-            action.domain.urls.sort_values(ascending = False)
-            if len(self.clicks) > 1:
-                previous = self.clicks[-2]
-                self.urls[action.link] = action
-                time = action.timestamp - previous.timestamp
-                if time > self.maxtime:
-                    self.maxtime = time
-                if not (previous.link, action.link) in G.edges():
-                    G.add_edge(previous.link, action.link, weight=0, time=0, trails = set())
-                self.trails[-1].append((previous, action, time))
-                G[previous.link][action.link][0]['weight'] += 1
-                G[previous.link][action.link][0]['time'] = (G[previous.link][action.link][0]['time'] + time)/2
-                G[previous.link][action.link][0]['trails'].add(len(self.trails))
-                dom1 = previous.domain
-                dom2 = action.domain
-                weekday = tm.gmtime(action.timestamp).tm_wday
-                if dom2.dom in self.weekdays[weekday].keys():
-                    val = self.weekdays[weekday].get_value(dom2.dom) + 1
-                    self.weekdays[weekday].set_value(dom2.dom, val)  
-                else:
-                    self.weekdays[weekday].set_value(dom2.dom, 1)
-                self.weekdays[weekday] = self.weekdays[weekday].sort_values(ascending = False)
-                if not dom1.dom == dom2.dom:                    
-                    self.daytime.add(dom2, action.timestamp)
-                    D.add_edge(dom1, dom2)   
+                self.weekdays[weekday].set_value(dom2.dom, 1)
+            self.weekdays[weekday] = self.weekdays[weekday].sort_values(ascending = False)
+            if not dom1.dom == dom2.dom:                    
+                self.daytime.add(dom2, action.timestamp)
+                D.add_edge(dom1, dom2)   
         self.lastnode = action
         
     def parseAction(self, inputline):
         action = self.extractAction(inputline)
-        self.insertAction(self.F, self.G, action)
-        if action.action == "click":
-            return self.suggestcontinuation(action)   
+        if not action == None:
+            self.insertAction(self.F, self.G, action)
+            return self.suggestcontinuation(action)
+        else:
+            return None
     
     def suggestcontinuation(self, action):
         dayproposals = self.proposedaytimes(action.timestamp, 15*60, 10)
