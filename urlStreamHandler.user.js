@@ -5,8 +5,6 @@
 // @version     1
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @grant       GM_xmlhttpRequest
-// @grant       GM_addStyle
-// @grant       GM_getResourceText
 // @run-at      document-end
 // ==/UserScript==
 
@@ -124,38 +122,44 @@ try {
     "html": html
   }, function(response) {
     try {
+      // Message to show JS ran without errors
+      console.log("Predictive webbrowsing is active.");
 
-        //var jqUI_CssSrc = GM_getResourceText ("http://localhost:8000/style.css");
-        //GM_addStyle (jqUI_CssSrc);
       /*
        * Show response from script in back-end here
        * Response object contains:
-       * -
+       * - Response status (success True or False)
+       * - Array with suggested URLs
        */
-       if(response.response.success) {
-         $("head").append (
-             '<link href="http://localhost:8000/style.css" '
-           + 'rel="stylesheet" type="text/css">'
-         );
-        console.log("Predictive webbrowsing is active.");
-        data = JSON.parse(response.response);
-        console.log(data);
+      data = JSON.parse(response.response);
+      console.log(data);
 
-        $("body").append('<div id="ml_suggestionbox" class="expanded"></div>');
-        $("#ml_suggestionbox").append('<h3>Suggestions</h3>');
+      if(!response.response.success)
+        return;
 
-        var suggestions = "";
-        $.each(data.guesses, function(index, val) {
-          var name = val.replace("http://", "")
-                           .replace("https://", "")
-                           .split('/')[0];
-          suggestions += '<li>';
-          suggestions +='<a href="'+val+'" title="Full link: '+val+'" style="color:#eee;text-decoration: none;">';
-          suggestions += name + '</a></li>';
-        });
-        $("#ml_suggestionbox").append('<ul class="suggestions">'
-                                      +suggestions+'</ul>');
-      }
+      // Use a CSS file for styling using greasemonkey
+      $("head").append (
+           '<link href="http://localhost:8000/style.css" '
+         + 'rel="stylesheet" type="text/css">'
+      );
+
+      // Append the suggestion box
+      $("body").append('<div id="ml_suggestionbox" class="expanded"></div>');
+      $("#ml_suggestionbox").append('<h3>Suggestions</h3>');
+
+      // Add the suggested links to suggestionbox
+      var suggestions = "";
+      $.each(data.guesses, function(index, val) {
+        var name = val.replace("http://", "")
+                         .replace("https://", "")
+                         .split('/')[0];
+        suggestions += '<li>';
+        suggestions +='<a href="'+val+'" title="Full link: '+val
+                    +'" style="color:#eee;text-decoration: none;">';
+        suggestions += name + '</a></li>';
+      });
+      $("#ml_suggestionbox").append('<ul class="suggestions">'
+                                    +suggestions+'</ul>');
       // TODO: Do something (e.g. show a top bar with the final link of the
       //       suspected sequence)
       /*var best_guess = data.guesses[0][0];
@@ -168,7 +172,7 @@ try {
         }
     }*/
 
-      // Helper function
+      // Helper function for showing on mouseover - together with CSS3
       $(function(){
           $('#ml_suggestionbox').on("mouseenter", function(){
             setTimeout(function(){
@@ -178,7 +182,7 @@ try {
             $(this).removeClass("popup");
           });
 
-          // Collapse after some time to minimize distration
+          // Collapse box after some time to minimize distration
           setTimeout(function(){
               $('#ml_suggestionbox').removeClass("expanded")
             }, 3000);

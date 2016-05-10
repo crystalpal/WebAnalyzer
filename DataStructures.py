@@ -1,42 +1,56 @@
+# -*- coding: utf-8 -*-
+"""
+dataStructures.py
+
+@author: Joren & Vincent
+
+"""
 import time as tm
 import pandas as pd
-from Utilities import gettimeofday
+from utilities import gettimeofday
+
 
 class Action(object):
-    action =""
+    action = ""
     domain = ""
     link = ""
     timestamp = ""
     color = ""
+
     def __init__(self, action, domain, link, timeformat, color):
         self.action = action
         self.domain = domain
         self.link = link
         self.timestamp = tm.mktime(timeformat)
         self.color = color
-    
-  
+
+
 class Domain(object):
     dom = ""
     urls = pd.Series()
     trail = 0
+
     def __init__(self, url):
         self.dom = url
         self.urls = pd.Series()
-        
+
+
 class CircularList():
     items = []
-    def __init__(self): 
+
+    def __init__(self):
         self.items = [[] for x in range(60*60*24)]
+
     def add(self, domain, timestamp):
-       x = gettimeofday(timestamp)
-       if len(self.items[x]) == 0:
+        x = gettimeofday(timestamp)
+        if len(self.items[x]) == 0:
             self.items[x] = []
             self.items[x].append(domain.dom)
+
     def getrange(self, timestamp, seconds):
         x = gettimeofday(timestamp)
         start = x - seconds
-        end = x + seconds        
+        end = x + seconds
         alldomains = pd.Series()
         if start < 0:
             start = 60*60*24 - start
@@ -64,8 +78,5 @@ class CircularList():
                         alldomains.set_value(dom, val)
                     else:
                         alldomains.set_value(dom, 1)
-        alldomains = alldomains.sort_values(ascending = False)
+        alldomains = alldomains.sort_values(ascending=False)
         return alldomains
-     
-# -*- coding: utf-8 -*-
-

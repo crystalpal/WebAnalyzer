@@ -3,9 +3,6 @@
 """
 urlStreamHandler.py
 
-TODO:
-- Nieuwe proposer aanmaken (met path naar vorige csv)
-
 """
 
 import sys

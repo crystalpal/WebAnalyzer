@@ -2,7 +2,7 @@
 """
 Created on Sat Apr  2 14:41:32 2016
 
-@author: Joren
+@author: Joren & Vincent
 """
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -12,102 +12,122 @@ import datetime
 import pandas as pd
 import os
 import sys
-from DataStructures import Action, Domain, CircularList
-from Utilities import combinetimeproposals, domainsuggestions, combinesuggestions
-from Traverse import breathtraverse
+from dataStructures import Action, Domain, CircularList
+from utilities import combinetimeproposals, domainsuggestions, combinesuggestions
+from traverse import breathtraverse
+
 
 class Proposer(object):
-    
+
     def __init__(self, path):
-        self.clicks = [] # A list containing every click action
-        self.domains = {} # A dictionary mapping domain names on domain objects
-        self.urls = {} # A dictionnary mapping urls on action objects   
-        self.maxtime = 0 # The masimum time that is spent on a single url
-        self.domaintime = 0 # The maximum time that is spent in a domain // note, change both or add to trailtime 
-        self.trails = [0] # A list of trailid's containing their urls
+        self.clicks = []   # A list containing every click action
+        self.domains = {}  # A dictionary mapping domain names on domain objs
+        self.urls = {}     # A dictionnary mapping urls on action objects
+        self.maxtime = 0   # The masimum time that is spent on a single url
+        # The maximum time spent in a domain
+        # // note, change both or add to trailtime
+        self.domaintime = 0
+        self.trails = [0]  # A list of trailid's containing their urls
         self.trails[0] = []
         self.intertrails = []
-        self.weekdays = {0:pd.Series(), 1:pd.Series(), 2:pd.Series(), 3:pd.Series(), 4:pd.Series(), 5:pd.Series(), 6:pd.Series()}
-        #daytime = {0:pd.Series(), 1:pd.Series(), 2:pd.Series(), 3:pd.Series(), 4:pd.Series(), 5:pd.Series(), 6:pd.Series(), 7:pd.Series()}
+        self.weekdays = {0: pd.Series(), 1: pd.Series(), 2: pd.Series(),
+                         3: pd.Series(), 4: pd.Series(), 5: pd.Series(),
+                         6: pd.Series()}
         self.daytime = CircularList()
-        self.lastnode = Action(None, None, None, tm.strptime("1980 1 1 1 1 1", "%Y %m %d %H %M %S"), None)
-            
+        self.lastnode = Action(None, None, None,
+                               tm.strptime("1980 1 1 1 1 1", "%Y %m %d %H %M %S"),
+                               None)
+
         self.F = nx.MultiDiGraph()
         self.G = nx.MultiDiGraph()
-        
-        self.colors = ["red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold", 
-          "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"          
-          "red", "blue", "yellow", "green", "purple", "white", "orange", "pink", "gray", "brown", "white", "silver", "gold"]  
- 
+
+        # Colors for graph representation
+        self.colors = ["red", "blue", "yellow", "green", "purple", "white",
+                       "orange", "pink", "gray", "brown", "white", "silver",
+                       "gold", "red", "blue", "yellow", "green", "purple",
+                       "white", "orange", "pink", "gray", "brown", "white",
+                       "silver", "gold", "red", "blue", "yellow", "green",
+                       "purple", "white", "orange", "pink", "gray", "brown",
+                       "white", "silver", "gold"]
+
         self.fillstructures(path)
-    
 
     def clean_file_row(self, input):
-        input = input.rstrip()         # Remove \n
-        input = "".join(input.split()) # Remove all whitespaces
-        input = input.replace("\"", "")# Remove all extra double quotes
+        """ Cleans the input string from double quotes, \n and whitespaces """
+        input = input.rstrip()
+        input = "".join(input.split())
+        input = input.replace("\"", "")
         return input
-    
+
     def fillstructures(self, path):
+        """ Read out all csv data files from a given directory """
+        print("Reading all previous data files...")
         count = 0
         for file in os.listdir(path):
             try:
                 iterrows = iter(open(path + "/"+file))
                 for row in iterrows:
                     row = self.clean_file_row(row)
-                    # if an empty row (eg end of file) or if not a click action
-                    if not row and not "javascript" in row.lower(): # and not row.split(",")[1] == "click":
+                    # If an empty row (eg end of file) or JS link
+                    if not row and "javascript" not in row.lower():
                         continue
                     self.parseClick(str(row))
-            except:
+            except:  # If an import still fails, skip & keep count
                 count += 1
-                print("skipped file ", file)
-        print("Skipped files: ",count)
-    
+                print("Skipped file ", file)
+        print("Finished reading, skipped files:", count)
+
     def parseClick(self, inputline):
         action = self.extractAction(inputline)
-        if not action == None:
+        if action is not None:
             self.insertAction(self.F, self.G, action)
-    
+
     def extractAction(self, inputline):
-        inputline = inputline.replace("\"", "")
-        inputline = inputline.replace(" ", "")
-        row = inputline.split(',')
+        """ Parse inputline from default csv format and """
+        row = self.clean_file_row(inputline).split(',')
         timestamp = row[0]
         act = row[1]
-        if act == "click" and "//" in row[3]:
-            link = row [3]
-            domain = link[link.index('//')+2:link.index('/', link.index('//')+2)]
-            domain = domain.replace("www.", "")  
-            domain = domain[:domain.rindex('.')]
-            if "google" in link and "&" in link:
-                link = link[0:link.index('&')]
-            year = timestamp[:4]
-            month = timestamp[5:-17]
-            day = timestamp[8:-14]
-            hour = timestamp[11:-11]
-            minute = timestamp[14:-8]
-            second = timestamp[17:-5]
-            timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")          
-    
-            if not domain in self.domains.keys():
-                self.domains[domain] = Domain(domain)        
-            return Action(act, self.domains[domain], link, timeformat, self.colors[len(self.clicks)%9])
-        else:
+        if not act == "click" or "//" not in row[3]:
             return None
 
+        link = row[3]
+        # Get url domain
+        domain_index = link.index('//') + 2
+        domain = link[domain_index:link.index('/', domain_index)]
+        domain = domain.replace("www.", "")[:domain.rindex('.')]
+        if "google" in link and "&" in link:
+            link = link[0:link.index('&')]
+        # Parse timestamp - everything except for miliseconds after the dot
+        timefmt = tm.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")
+        '''
+        year = timestamp[:4]
+        month = timestamp[5:-17]
+        day = timestamp[8:-14]
+        hour = timestamp[11:-11]
+        minute = timestamp[14:-8]
+        second = timestamp[17:-5]
+        timefmt = tm.strptime(year +  " " + month + " " + " " + day
+                                 + " " + hour + " " + minute
+                                 + " " + second, "%Y %m %d %H %M %S")
+        '''
+
+        if domain not in self.domains.keys():
+            self.domains[domain] = Domain(domain)
+        return Action(act, self.domains[domain], link,
+                      timefmt, self.colors[len(self.clicks) % 9])
+
     def insertAction(self, G, D, action):
-            #check how far the last unloaded page was in the past, and start a new trail if necessary
-        if action.timestamp - self.lastnode.timestamp > 60*60: # in seconds = 1 hour
+        # check how far the last unloaded page was in the past, and start a new trail if necessary
+        if action.timestamp - self.lastnode.timestamp > 60*60:  # seconds = 1 hr
             self.trails.append([])
-            self.intertrails.append((self.lastnode, action))  
-        self.clicks.append(action)       
-        #check if the domain is already known in the system, if not initialize
-        if not action.link in action.domain.urls.keys():
-            action.domain.urls.set_value(action.link,1)
+            self.intertrails.append((self.lastnode, action))
+        self.clicks.append(action)
+        # check if the domain is already known in the system, if not initialize
+        if action.link not in action.domain.urls.keys():
+            action.domain.urls.set_value(action.link, 1)
         else:
             action.domain.urls[action.link] += 1
-        action.domain.urls.sort_values(ascending = False)
+        action.domain.urls.sort_values(ascending=False)
         if len(self.clicks) > 1:
             previous = self.clicks[-2]
             self.urls[action.link] = action
@@ -115,7 +135,7 @@ class Proposer(object):
             if time > self.maxtime:
                 self.maxtime = time
             if not (previous.link, action.link) in G.edges():
-                G.add_edge(previous.link, action.link, weight=0, time=0, trails = set())
+                G.add_edge(previous.link, action.link, weight=0, time=0, trails=set())
             self.trails[-1].append((previous, action, time))
             G[previous.link][action.link][0]['weight'] += 1
             G[previous.link][action.link][0]['time'] = (G[previous.link][action.link][0]['time'] + time)/2
@@ -125,60 +145,57 @@ class Proposer(object):
             weekday = tm.gmtime(action.timestamp).tm_wday
             if dom2.dom in self.weekdays[weekday].keys():
                 val = self.weekdays[weekday].get_value(dom2.dom) + 1
-                self.weekdays[weekday].set_value(dom2.dom, val)  
+                self.weekdays[weekday].set_value(dom2.dom, val)
             else:
                 self.weekdays[weekday].set_value(dom2.dom, 1)
-            self.weekdays[weekday] = self.weekdays[weekday].sort_values(ascending = False)
-            if not dom1.dom == dom2.dom:                    
+            self.weekdays[weekday] = self.weekdays[weekday].sort_values(ascending=False)
+            if not dom1.dom == dom2.dom:
                 self.daytime.add(dom2, action.timestamp)
-                D.add_edge(dom1, dom2)   
+                D.add_edge(dom1, dom2)
         self.lastnode = action
-        
+
     def parseAction(self, inputline):
         action = self.extractAction(inputline)
-        if not action == None:
-            self.insertAction(self.F, self.G, action)
-            return self.suggestcontinuation(action)
-        else:
+        if action is None:
             return None
-    
+        self.insertAction(self.F, self.G, action)
+        return self.suggestcontinuation(action)
+
     def suggestcontinuation(self, action):
         dayproposals = self.proposedaytimes(action.timestamp, 15*60, 10)
         weekproposals = self.proposeweektimes(action.timestamp, 3)
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
         paths = pd.Series()
-        #trail = [[],0]
+        # trail = [[],0]
         breathtraverse(self.F, [(action.link, 0)], paths, 8, 10)
-        paths = paths.sort_values(ascending = False)
+        paths = paths.sort_values(ascending=False)
         domainproposals = domainsuggestions(paths, self.urls)
         return combinesuggestions(action, timeproposals, domainproposals, self.urls, 5)        
-        
+
     def suggeststart(self):
         dayproposals = self.proposedaytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60, 10)
         weekproposals = self.proposeweektimes(datetime.datetime.utcfromtimestamp(tm.time()), 3)
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
-        trailproposals = [x.domain for (y,x) in self.intertrails]
+        trailproposals = [x.domain for (y, x) in self.intertrails]
         proposals = []
         domainproposals = []
         for timeproposal in timeproposals:
             if timeproposal in trailproposals:
                 domainproposals.append(timeproposal)
         for domain in domainproposals[:2]:
-            domainlinks = [y.link for (y,x) in self.intertrails if x == domain]
+            domainlinks = [y.link for (y, x) in self.intertrails if x == domain]
             linkproposals = [(link, sum(self.F.edges(link)['weight'])) for link in domainlinks]
-            sortedprops = linkproposals.sort(key=lambda tup:tup[1])
+            sortedprops = linkproposals.sort(key=lambda tup: tup[1])
             proposals.append(sortedprops[:2])
         return proposals
-        
+
     def proposeweektimes(self, timestamp, amount):
         return self.weekdays[datetime.datetime.utcfromtimestamp(timestamp).weekday()][:amount]
 
     def proposedaytimes(self, timestamp, r, amount):
         return self.daytime.getrange(timestamp, r)[:amount]
-                
-   
-    
-   
+
+
 '''
 print ("total domains: " + str(len(domains)))
 print("----")
@@ -194,7 +211,6 @@ for sug in suggestions:
 '''
 
 '''
-
 #F.add_edges_from(edges)
 nodevalues = [node.color for node in F.nodes()]
 nodelabels = {clicks[node]:clicks[node].domain[clicks[node].domain.index('//')+2:] for node in range(0, len(F.nodes()))}
@@ -203,11 +219,11 @@ nodesizes = [(F.nodes()[index+1].timestamp - F.nodes()[index].timestamp)/maxtime
 nx.draw_networkx_nodes(F, nodepos, cmap=plt.get_cmap('jet'), node_color = nodevalues, node_size=nodesizes)
 nx.draw_networkx_edges(F, nodepos, arrows=True)
 nx.draw_networkx_labels(F, nodepos, nodelabels ,font_size=15)
-plt.show() 
+plt.show()
 '''
 '''
 plt.figure(figsize=(10,10))
-plt.axis('off') 
+plt.axis('off')
 values = [colorConverter.to_rgba('y', alpha = index/(len(G.nodes()))) for index in range(0, len(G.nodes()))]
 labels = {domains[node]:node for node in domains}
 pos = nx.fruchterman_reingold_layout(G)
@@ -218,21 +234,4 @@ nx.draw_networkx_labels(G, pos, labels ,font_size=10)
 
 plt.show()
 
-
-
-   
 '''
-
-        
-
-
-    
-    
-    
-
-
-
-
-
-
-
