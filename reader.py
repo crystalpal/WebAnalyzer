@@ -141,7 +141,7 @@ class Proposer(object):
         dayproposals = proposedaytimes(datetime.datetime.utcfromtimestamp(timestamp), 15*60, 10)
         weekproposals = proposeweektimes(datetime.datetime.utcfromtimestamp(timestamp), 3)
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
-        trailproposals = [x.domain for (y,x) in self.trails]
+        trailproposals = [x.domain for (y,x) in self.intertrails]
         
         proposals = []
         domainproposals = []
@@ -149,8 +149,11 @@ class Proposer(object):
             if timeproposal in trailproposals:
                 domainproposals.append(timeproposal)
         for domain in domainproposals[:2]:
-            x= x
-            
+            domainlinks = [y.link for (y,x) in self.intertrails if x == domain]
+            linkproposals = [(link, sum(self.F.edges(link)['weight'])) for link in domainlinks]
+            sortedprops = linkproposals.sort(key=lambda tup:tup[1])
+            proposals.append(sortedprops[:2])
+        return proposals
         
     def proposeweektimes(self, timestamp, amount):
         return self.weekdays[datetime.datetime.utcfromtimestamp(timestamp).weekday()][:amount]
