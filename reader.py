@@ -13,7 +13,7 @@ import pandas as pd
 import os
 import sys
 from DataStructures import Action, Domain, CircularList
-from Utilities import combinetimeproposals, domainsuggestions, combinesuggestions
+from Utilities import proposedaytimes, proposeweektimes, combinetimeproposals, domainsuggestions, combinesuggestions
 from Traverse import breathtraverse
 
 class Proposer(object):
@@ -122,13 +122,13 @@ class Proposer(object):
         
     def parseAction(self, inputline):
         action = self.extractAction(inputline)
-        self.insertAction(action)
+        self.insertAction(self.F, self.G, action)
         if action.action == "click":
             return self.suggestcontinuation(action)   
     
     def suggestcontinuation(self, action):
-        dayproposals = proposedaytimes(action, 15*60, 10)
-        weekproposals = proposeweektimes(action, 3)
+        dayproposals = proposedaytimes(action.timestamp, 15*60, 10)
+        weekproposals = proposeweektimes(action.timestamp, 3)
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
         paths = pd.Series()
         #trail = [[],0]
@@ -136,12 +136,27 @@ class Proposer(object):
         paths = paths.sort_values(ascending = False)
         domainproposals = domainsuggestions(paths, self.urls)
         return combinesuggestions(timeproposals, domainproposals, self.urls, 5)
+        
+    def suggeststart(self):
+        dayproposals = proposedaytimes(datetime.datetime.utcfromtimestamp(timestamp), 15*60, 10)
+        weekproposals = proposeweektimes(datetime.datetime.utcfromtimestamp(timestamp), 3)
+        timeproposals = combinetimeproposals(dayproposals, weekproposals)
+        trailproposals = [x.domain for (y,x) in self.trails]
+        
+        proposals = []
+        domainproposals = []
+        for timeproposal in timeproposals:
+            if timeproposal in trailproposals:
+                domainproposals.append(timeproposal)
+        for domain in domainproposals[:2]:
+            x= x
             
-    def proposeweektimes(self, proposed, amount):
-        return self.weekdays[datetime.datetime.utcfromtimestamp(proposed.timestamp).weekday()][:amount]
+        
+    def proposeweektimes(self, timestamp, amount):
+        return self.weekdays[datetime.datetime.utcfromtimestamp(timestamp).weekday()][:amount]
 
-    def proposedaytimes(self, proposed, r, amount):
-        return self.daytime.getrange(proposed.timestamp, r)[:amount]
+    def proposedaytimes(self, timestamp, r, amount):
+        return self.daytime.getrange(timestamp, r)[:amount]
 
                 
    
