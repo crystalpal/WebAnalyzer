@@ -13,7 +13,7 @@ import pandas as pd
 import os
 import sys
 from DataStructures import Action, Domain, CircularList
-from Utilities import proposedaytimes, proposeweektimes, combinetimeproposals, domainsuggestions, combinesuggestions
+from Utilities import combinetimeproposals, domainsuggestions, combinesuggestions
 from Traverse import breathtraverse
 
 class Proposer(object):
@@ -127,19 +127,19 @@ class Proposer(object):
             return self.suggestcontinuation(action)   
     
     def suggestcontinuation(self, action):
-        dayproposals = proposedaytimes(action.timestamp, 15*60, 10)
-        weekproposals = proposeweektimes(action.timestamp, 3)
+        dayproposals = self.proposedaytimes(action.timestamp, 15*60, 10)
+        weekproposals = self.proposeweektimes(action.timestamp, 3)
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
         paths = pd.Series()
         #trail = [[],0]
         breathtraverse(self.F, [(action.link, 0)], paths, 8, 10)
         paths = paths.sort_values(ascending = False)
         domainproposals = domainsuggestions(paths, self.urls)
-        return combinesuggestions(timeproposals, domainproposals, self.urls, 5)
+        return combinesuggestions(timeproposals, domainproposals, self.urls, 5)        
         
     def suggeststart(self):
-        dayproposals = proposedaytimes(datetime.datetime.utcfromtimestamp(timestamp), 15*60, 10)
-        weekproposals = proposeweektimes(datetime.datetime.utcfromtimestamp(timestamp), 3)
+        dayproposals = self.proposedaytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60, 10)
+        weekproposals = self.proposeweektimes(datetime.datetime.utcfromtimestamp(tm.time()), 3)
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
         trailproposals = [x.domain for (y,x) in self.intertrails]
         
@@ -160,7 +160,6 @@ class Proposer(object):
 
     def proposedaytimes(self, timestamp, r, amount):
         return self.daytime.getrange(timestamp, r)[:amount]
-
                 
    
     
