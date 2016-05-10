@@ -80,7 +80,9 @@ class Proposer(object):
         minute = timestamp[14:-8]
         second = timestamp[17:-5]
         timeformat = tm.strptime(year +  " " + month + " " + " " + day + " " + hour + " " + minute + " " + second, "%Y %m %d %H %M %S")          
-        return Action(act, domain, link, timeformat, self.colors[len(self.clicks)%9])
+        if not domain in self.domains.keys():
+            self.domains[domain] = Domain(domain)        
+        return Action(act, self.domains[domain], timeformat, self.colors[len(self.clicks)%9])
 
     def insertAction(self, G, D, action):
             #check how far the last unloaded page was in the past, and start a new trail if necessary
@@ -91,8 +93,6 @@ class Proposer(object):
         if action.action == "click":
             self.clicks.append(action)       
             #check if the domain is already known in the system, if not initialize
-            if not action.domain in self.domains.keys():
-                self.domains[action.domain] = Domain(action.domain)
             if not action.link in action.domain.urls.keys():
                 action.domain.urls.append(action.link)
             action.domain.urls[action.link] += 1
