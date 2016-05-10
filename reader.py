@@ -94,11 +94,10 @@ class Proposer(object):
             self.clicks.append(action)       
             #check if the domain is already known in the system, if not initialize
             if not action.link in action.domain.urls.keys():
-                action.domain.urls[action.link] = 1
+                action.domain.urls.set_value(action.link,1)
             else:
                 action.domain.urls[action.link] += 1
             action.domain.urls.sort_values(ascending = False)
-            self.domains[action.domain].urls.append(action)
             if len(self.clicks) > 1:
                 previous = self.clicks[-2]
                 self.urls[action.link] = action
