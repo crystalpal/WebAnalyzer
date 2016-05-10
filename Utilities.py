@@ -72,7 +72,7 @@ def combinesuggestions(current, timeproposals, domainsuggestions, urls, amount):
     if len(suggestions) < amount:
         for i in range(0, len(suggestions) - amount):
             suggestions.append(current.domain.urls[i])
-    '''        
+    '''
     if len(suggestions) < amount:
         for domain in domainsuggestions.keys():
             for d in domainsuggestions[domain][:1]: 
