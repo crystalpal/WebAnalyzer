@@ -62,7 +62,7 @@ def combinesuggestions(current, timeproposals, domainsuggestions, urls, amount):
         for d in domainsuggestions[domain][:1]: 
             if d not in suggestions:             
                 suggestions.append(d)
-    domains = [x for x in timeproposals.keys() if x not in [y for y in suggestions]]
+    domains = [x for x in timeproposals.keys() if x not in suggestions]
     for domain in domains:  
         for d in domainsuggestions[domain][:1]: 
             if d not in suggestions:
