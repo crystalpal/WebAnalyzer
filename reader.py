@@ -43,10 +43,18 @@ class Proposer(object):
     
            
     def fillstructures(self, path):
+        count = 0
         for file in os.listdir(path):
-            iterrows = iter(open(path + "/"+file))
-            for row in iterrows:
-                self.parseClick(str(row))    
+            try:
+                iterrows = iter(open(path + "/"+file))
+                for row in iterrows:
+                    if not row.rstrip():
+                        continue
+                    self.parseClick(str(row.rstrip()))  
+            except:
+                count += 1
+                print("skipped file ", file)
+        print("Skipped files: ",count)
     
     def parseClick(self, inputline):
         action = self.extractAction(inputline)

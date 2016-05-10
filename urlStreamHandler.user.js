@@ -132,29 +132,30 @@ try {
        * Response object contains:
        * -
        */
-       $("head").append (
-           '<link href="http://localhost:8000/style.css" '
-         + 'rel="stylesheet" type="text/css">'
-       );
-      console.log("Predictive webbrowsing is active.");
-      data = JSON.parse(response.response);
-      console.log(data);
+       if(response.response.success) {
+         $("head").append (
+             '<link href="http://localhost:8000/style.css" '
+           + 'rel="stylesheet" type="text/css">'
+         );
+        console.log("Predictive webbrowsing is active.");
+        data = JSON.parse(response.response);
+        console.log(data);
 
-      $("body").append('<div id="ml_suggestionbox" class="expanded"></div>');
-      $("#ml_suggestionbox").append('<h3>Suggestions</h3>');
+        $("body").append('<div id="ml_suggestionbox" class="expanded"></div>');
+        $("#ml_suggestionbox").append('<h3>Suggestions</h3>');
 
-      var suggestions = "";
-      $.each(data.guesses, function(index, val) {
-        var name = val.replace("http://", "")
-                         .replace("https://", "")
-                         .split('/')[0];
-        suggestions += '<li>';
-        suggestions +='<a href="'+val+'" title="Full link: '+val+'" style="color:#eee;text-decoration: none;">';
-        suggestions += name + '</a></li>';
-      });
-      $("#ml_suggestionbox").append('<ul class="suggestions">'
-                                    +suggestions+'</ul>');
-
+        var suggestions = "";
+        $.each(data.guesses, function(index, val) {
+          var name = val.replace("http://", "")
+                           .replace("https://", "")
+                           .split('/')[0];
+          suggestions += '<li>';
+          suggestions +='<a href="'+val+'" title="Full link: '+val+'" style="color:#eee;text-decoration: none;">';
+          suggestions += name + '</a></li>';
+        });
+        $("#ml_suggestionbox").append('<ul class="suggestions">'
+                                      +suggestions+'</ul>');
+      }
       // TODO: Do something (e.g. show a top bar with the final link of the
       //       suspected sequence)
       /*var best_guess = data.guesses[0][0];

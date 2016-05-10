@@ -2,6 +2,10 @@
 # encoding: utf-8
 """
 urlStreamHandler.py
+
+TODO:
+- Nieuwe proposer aanmaken (met path naar vorige csv)
+
 """
 
 import sys
@@ -12,8 +16,9 @@ import socketserver
 import datetime
 import atexit
 import signal
-import reader
+from reader import Proposer
 
+proposer = Proposer("./data")
 date = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 filename = "urls_{}.csv".format(date)
 logfile = open(filename, "w")
@@ -60,7 +65,7 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
             print('{:<15}: {}'.format(action_str, url))
         inp = ts + ", " + action_str + ", " + url + ", " + target
         print(inp, file=logfile)
-        suggestions  = reader.parseAction(inp)
+        suggestions = proposer.parseAction(inp)
         print(suggestions)
         if not suggestions == None:
             response = {
