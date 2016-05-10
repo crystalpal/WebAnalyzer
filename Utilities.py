@@ -25,10 +25,10 @@ def addtopath(paths, n, score):
 def domainsuggestions(paths, urls):
         domainsuggestions = pd.Series()
         for index in paths.keys():
-            if urls[index].domain in domainsuggestions:
-                domainsuggestions[urls[index].domain].append(index)
+            if urls[index].domain.dom in domainsuggestions:
+                domainsuggestions[urls[index].domain.dom].append(index)
             else:
-                domainsuggestions[urls[index].domain] = [index]
+                domainsuggestions[urls[index].domain.dom] = [index]
         print("domainsuggestions")
         print(domainsuggestions)
         return domainsuggestions
