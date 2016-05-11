@@ -34,7 +34,7 @@ class Proposer(object):
                          3: pd.Series(), 4: pd.Series(), 5: pd.Series(),
                          6: pd.Series()}
         self.daytime = CircularList()
-        self.lastnode = Action(None, None, None,
+        self.lastnode = Action(None, None, None, None, 
                                tm.strptime("1980 1 1 1 1 1", "%Y %m %d %H %M %S"),
                                None)
 
@@ -83,43 +83,37 @@ class Proposer(object):
             self.insertAction(self.F, self.G, action)
 
     def extractAction(self, inputline):
-        """ Parse inputline from default csv format and """
+        #Parse inputline from default csv format and extract an Action object from it
         row = self.clean_file_row(inputline).split(',')
         timestamp = row[0]
         act = row[1]
         if not act == "click" or "//" not in row[3]:
             return None
-
+        previous = row[2]
         link = row[3]
-        # Get url domain
-        domain_index = link.index('//') + 2
-        domain = link[domain_index:link.index('/', domain_index)]
-        domain = domain.replace("www.", "")[:domain.rindex('.')]
-        if "google" in link and "&" in link:
-            link = link[0:link.index('&')]
         # Parse timestamp - everything except for miliseconds after the dot
-        timefmt = tm.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")
-        '''
-        year = timestamp[:4]
-        month = timestamp[5:-17]
-        day = timestamp[8:-14]
-        hour = timestamp[11:-11]
-        minute = timestamp[14:-8]
-        second = timestamp[17:-5]
-        timefmt = tm.strptime(year +  " " + month + " " + " " + day
-                                 + " " + hour + " " + minute
-                                 + " " + second, "%Y %m %d %H %M %S")
-        '''
-
-        if domain not in self.domains.keys():
-            self.domains[domain] = Domain(domain)
-        clickaction =  Action(act, self.domains[domain], link, timefmt, self.colors[len(self.clicks) % 9])
-        if clickaction.link not in self.domains[domain].urls.keys():
+        timefmt = tm.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")        
+        #check if this is the first action in a sequence, first link might not have been registered as an action     
+        if len(self.clicks) == 0:
+            self.create_action(act, None, previous, timefmt)
+        currentaction = self.create_action(act, previous, link, timefmt)
+        return currentaction
+        
+    def create_action(self, act, previous, link, timefmt):
+         domain_index = link.index('//') + 2
+         domain = link[domain_index:link.index('/', domain_index)]
+         domain = domain.replace("www.", "")[:domain.rindex('.')]         
+         if "google" in link and "&" in link:
+             link = link[0:link.index('&')]
+         if domain not in self.domains.keys():
+             self.domains[domain] = Domain(domain)
+         clickaction =  Action(act, self.domains[domain], previous, link, timefmt, self.colors[len(self.clicks) % 9])
+         if clickaction.link not in self.domains[domain].urls.keys():
             clickaction.domain.urls.set_value(clickaction.link, 1)
-        else:
+         else:
             self.domains[domain].urls[clickaction.link] += 1        
-        self.domains[domain].urls.sort_values(ascending=False)
-        return clickaction
+         self.domains[domain].urls.sort_values(ascending=False)
+         return clickaction
 
     def insertAction(self, G, D, action):
         # check how far the last unloaded page was in the past, and start a new trail if necessary
@@ -127,8 +121,7 @@ class Proposer(object):
             self.trails.append([])
             self.intertrails.append((self.lastnode, action))
         self.clicks.append(action)
-        # check if the domain is already known in the system, if not initialize
-        
+        # check if the domain is already known in the system, if not initialize        
         if len(self.clicks) > 1:
             previous = self.clicks[-2]
             self.urls[action.link] = action
@@ -163,12 +156,16 @@ class Proposer(object):
         return self.suggestcontinuation(action)
 
     def suggestcontinuation(self, action):
+        print(action.link)
+        print(action.domain.dom)
+        print("urls in domain")
+        print(action.domain.urls)
         dayproposals = self.proposedaytimes(action.timestamp, 15*60, 10)
         weekproposals = self.proposeweektimes(action.timestamp, 3)
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
         paths = pd.Series()
         # trail = [[],0]
-        breathtraverse(self.F, [(action.link, 0)], paths, 2, 10)
+        breathtraverse(self.F, [(action.link, 0)], paths, 3, 10)
         paths = paths.sort_values(ascending=False)
         domainproposals = domainsuggestions(paths, self.urls)
         return combinesuggestions(action, timeproposals, domainproposals, self.urls, 5)        

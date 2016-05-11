@@ -13,13 +13,15 @@ from utilities import gettimeofday
 class Action(object):
     action = ""
     domain = ""
+    previous = ""
     link = ""
     timestamp = ""
     color = ""
 
-    def __init__(self, action, domain, link, timeformat, color):
+    def __init__(self, action, domain, previous, link, timeformat, color):
         self.action = action
         self.domain = domain
+        self.previous = previous
         self.link = link
         self.timestamp = tm.mktime(timeformat)
         self.color = color
