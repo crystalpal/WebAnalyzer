@@ -12,7 +12,7 @@ import datetime
 import pandas as pd
 import os
 import sys
-from dataStructures import Action, Domain, CircularList
+from datastructures import Action, Domain, CircularList
 from utilities import combinetimeproposals, domainsuggestions, combinesuggestions
 from traverse import breathtraverse
 
@@ -113,8 +113,13 @@ class Proposer(object):
 
         if domain not in self.domains.keys():
             self.domains[domain] = Domain(domain)
-        return Action(act, self.domains[domain], link,
-                      timefmt, self.colors[len(self.clicks) % 9])
+        clickaction =  Action(act, self.domains[domain], link, timefmt, self.colors[len(self.clicks) % 9])
+        if clickaction.link not in self.domains[domain].urls.keys():
+            clickaction.domain.urls.set_value(clickaction.link, 1)
+        else:
+            self.domains[domain].urls[clickaction.link] += 1        
+        self.domains[domain].urls.sort_values(ascending=False)
+        return clickaction
 
     def insertAction(self, G, D, action):
         # check how far the last unloaded page was in the past, and start a new trail if necessary
@@ -123,11 +128,7 @@ class Proposer(object):
             self.intertrails.append((self.lastnode, action))
         self.clicks.append(action)
         # check if the domain is already known in the system, if not initialize
-        if action.link not in action.domain.urls.keys():
-            action.domain.urls.set_value(action.link, 1)
-        else:
-            action.domain.urls[action.link] += 1
-        action.domain.urls.sort_values(ascending=False)
+        
         if len(self.clicks) > 1:
             previous = self.clicks[-2]
             self.urls[action.link] = action
@@ -167,7 +168,7 @@ class Proposer(object):
         timeproposals = combinetimeproposals(dayproposals, weekproposals)
         paths = pd.Series()
         # trail = [[],0]
-        breathtraverse(self.F, [(action.link, 0)], paths, 8, 10)
+        breathtraverse(self.F, [(action.link, 0)], paths, 2, 10)
         paths = paths.sort_values(ascending=False)
         domainproposals = domainsuggestions(paths, self.urls)
         return combinesuggestions(action, timeproposals, domainproposals, self.urls, 5)        

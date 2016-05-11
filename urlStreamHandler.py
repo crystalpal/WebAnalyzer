@@ -71,7 +71,8 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
             }
         else :
             response = {
-                'success': False
+                'success': True,
+                "guesses" : ["Test"]
             }
             jsonstr = bytes(json.dumps(response), "UTF-8")
             self.send_response(200)
