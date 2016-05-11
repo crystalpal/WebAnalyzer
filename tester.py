@@ -45,10 +45,10 @@ def readpath(path, output, outputtype):
                         if not proposals == None:
                             for i in range(0, len(proposals)):
                                 if proposals[i] == allrows[rowindex+1].split(',')[3]:
-                                    totalscore += len(proposals) - i
+                                    totalscore += (len(proposals) - i)
                                     break
                     totalscore /= (len(allrows) - datacut)    
-                    f.write(user + " " + str(totalscore) + "\n" )     
+                    f.write(user + " " + str(totalscore) + " " + str(len(allrows[datacut:])-1) + "\n" )     
             
 def clean_file_row(input):
         """ Cleans the input string from double quotes, \n and whitespaces """
@@ -68,7 +68,7 @@ def test_seperately():
     for user in users:
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
         
-test_together()
-#test_seperately()
+#test_together()
+test_seperately()
 
  

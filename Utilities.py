@@ -67,21 +67,24 @@ def combine_suggestionstime(timeproposals, domainsuggestions):
 
 def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount):
     suggestions = []
+    '''
     for domain in domainsuggestions.keys()[:1]:
-        for d in domainsuggestions[domain][:2]:
-            if d not in suggestions:
-                suggestions.append(d)
-    for domain in domainsuggestions.keys()[1:3]:
         for d in domainsuggestions[domain][:1]:
             if d not in suggestions:
                 suggestions.append(d)
+    for domain in domainsuggestions.keys()[1:4]:
+        for d in domainsuggestions[domain][:1]:
+            if d not in suggestions:
+                suggestions.append(d)
+    '''
     domains = [x for x in timeproposals.keys() if x not in suggestions]
     for domain in domains:
         if domain in domainsuggestions.keys():
             for d in domainsuggestions[domain][:1]:
                 if d not in suggestions:
                     suggestions.append(d)
-                    return suggestions
+                    #return suggestions
+    
     length = 0
     cur = len(suggestions)
     if amount > cur:               
