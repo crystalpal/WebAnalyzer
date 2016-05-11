@@ -2,16 +2,18 @@
 import os
 from reader import Proposer
 import sys
+import pandas as pd
 
 
-def readpath(path, output):
-    userfiles = dict()
+def readpath(path, output, outputtype):
+    userfiles = pd.Series()
     for file in os.listdir(path):
         user = file.split("_")[0]
         if not user in userfiles.keys():
             userfiles[user] = []
         userfiles[user].append(file)
-    with open(output, 'w+') as f:
+        userfiles.sort()
+    with open(output, outputtype) as f:
         for user in userfiles.keys():
             if not len(userfiles[user]) == 0:
                     allrows = []
@@ -55,7 +57,18 @@ def clean_file_row(input):
         input = input.replace("\"", "")
         return input
         
+
+def test_together():        
+    readpath('./data', './results/alldata.txt', 'w+')
+
+def test_seperately():
+    users = []
+    for i in range(1, 5):
+        users.append("u"+str(i))
+    for user in users:
+        readpath('./testdata/'+user, './results/seperate.txt', 'a')
         
-readpath('./testdata/u1', './testingdata.txt')
+test_together()
+#test_seperately()
 
  
