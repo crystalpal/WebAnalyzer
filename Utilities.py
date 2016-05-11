@@ -33,7 +33,7 @@ def addtopath(paths, n, score):
         paths[n] = score
 
 
-def domainsuggestions(paths, urls):
+def domain_suggestions(paths, urls):
     domainsuggestions = pd.Series()
     for index in paths.keys():
         if urls[index].domain.dom in domainsuggestions:
@@ -45,7 +45,7 @@ def domainsuggestions(paths, urls):
     return domainsuggestions
 
 
-def combinesuggestionstime(timeproposals, domainsuggestions):
+def combine_suggestionstime(timeproposals, domainsuggestions):
     suggestions = []
     fill = 4 - len(timeproposals)
     print(fill)
@@ -65,26 +65,23 @@ def combinesuggestionstime(timeproposals, domainsuggestions):
     return suggestions
 
 
-def combinesuggestions(current, timeproposals, domainsuggestions, urls, amount):
+def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount):
     suggestions = []
     for domain in domainsuggestions.keys()[:1]:
         for d in domainsuggestions[domain][:2]:
             if d not in suggestions:
                 suggestions.append(d)
-    print(len(suggestions))
     for domain in domainsuggestions.keys()[1:3]:
         for d in domainsuggestions[domain][:1]:
             if d not in suggestions:
                 suggestions.append(d)
     domains = [x for x in timeproposals.keys() if x not in suggestions]
-    print(len(suggestions))
     for domain in domains:
         if domain in domainsuggestions.keys():
             for d in domainsuggestions[domain][:1]:
                 if d not in suggestions:
                     suggestions.append(d)
                     return suggestions
-    print(len(suggestions))
     length = 0
     cur = len(suggestions)
     if amount > cur:               
@@ -92,8 +89,6 @@ def combinesuggestions(current, timeproposals, domainsuggestions, urls, amount):
             length = amount - len(suggestions)
         else: 
             length = len(current.domain.urls)
-    print("lennie")
-    print(length)
     if len(suggestions) < amount:
         for i in range(0, length):
             suggestions.append(current.domain.urls.keys()[i])
@@ -109,7 +104,7 @@ def combinesuggestions(current, timeproposals, domainsuggestions, urls, amount):
     return suggestions
 
 
-def combinetimeproposals(dayproposals, weekproposals):
+def combine_timeproposals(dayproposals, weekproposals):
     timeproposals = pd.Series()
     for daydomain in dayproposals.keys():
         if daydomain in weekproposals.keys():

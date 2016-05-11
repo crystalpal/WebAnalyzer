@@ -35,12 +35,14 @@ def depthtraverse(G, source, paths, current, maxdepth, lookaheadtime):
             addtopath(paths, n, score)
 
 
-def breathtraverse(G, queue, paths, maxdepth, lookaheadtime):
+def breathtraverse(G, queue, visited, paths, maxdepth, lookaheadtime):
     if len(queue) == 0:
         return
     for idx in range(0, len(queue)):
         q = queue.pop(0)
         node, current = q[0], q[1]
+        if current == maxdepth:
+            return
         for n in G.neighbors(node):
             score = G[node][n][0]['weight']
             if current == maxdepth:
@@ -48,7 +50,10 @@ def breathtraverse(G, queue, paths, maxdepth, lookaheadtime):
                 return
             if G[node][n][0]['time'] > lookaheadtime:
                 addtopath(paths, n, score)
-                queue.append((n, (current+1)))
+                if not n in visited:
+                    queue.append((n, (current+1)))
             else:
-                queue.append((n, current))
-    breathtraverse(G, queue, paths, maxdepth, lookaheadtime)
+                if not n in visited:
+                    queue.append((n, current))
+            visited.append(n)
+    breathtraverse(G, queue, visited, paths, maxdepth, lookaheadtime)

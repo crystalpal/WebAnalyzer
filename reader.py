@@ -13,13 +13,13 @@ import pandas as pd
 import os
 import sys
 from datastructures import Action, Domain, CircularList
-from utilities import combinetimeproposals, domainsuggestions, combinesuggestions
+from utilities import combine_timeproposals, domain_suggestions, combine_suggestions
 from traverse import breathtraverse
 
 
 class Proposer(object):
 
-    def __init__(self, path):
+    def __init__(self, path, fillstructures):
         self.clicks = []   # A list containing every click action
         self.domains = {}  # A dictionary mapping domain names on domain objs
         self.urls = {}     # A dictionnary mapping urls on action objects
@@ -49,8 +49,9 @@ class Proposer(object):
                        "silver", "gold", "red", "blue", "yellow", "green",
                        "purple", "white", "orange", "pink", "gray", "brown",
                        "white", "silver", "gold"]
-
-        self.fillstructures(path)
+                       
+        if fillstructures:
+            self.fillstructures(path)
 
     def clean_file_row(self, input):
         """ Cleans the input string from double quotes, \n and whitespaces """
@@ -78,15 +79,16 @@ class Proposer(object):
         print("Finished reading, skipped files:", count)
 
     def parseClick(self, inputline):
-        action = self.extractAction(inputline)
+        action = self.extract_action(inputline)
         if action is not None:
-            self.insertAction(self.F, self.G, action)
+            self.insert_action(self.F, self.G, action)
 
-    def extractAction(self, inputline):
+    def extract_action(self, inputline):
         #Parse inputline from default csv format and extract an Action object from it
         row = self.clean_file_row(inputline).split(',')
         timestamp = row[0]
         act = row[1]
+        print(row)
         if not act == "click" or "//" not in row[3]:
             return None
         previous = row[2]
@@ -115,7 +117,7 @@ class Proposer(object):
          self.domains[domain].urls.sort_values(ascending=False)
          return clickaction
 
-    def insertAction(self, G, D, action):
+    def insert_action(self, G, D, action):
         # check how far the last unloaded page was in the past, and start a new trail if necessary
         if action.timestamp - self.lastnode.timestamp > 60*60:  # seconds = 1 hr
             self.trails.append([])
@@ -148,32 +150,28 @@ class Proposer(object):
                 D.add_edge(dom1, dom2)
         self.lastnode = action
 
-    def parseAction(self, inputline):
-        action = self.extractAction(inputline)
+    def parse_action(self, inputline, amount):
+        action = self.extract_action(inputline)
         if action is None:
             return None
-        self.insertAction(self.F, self.G, action)
-        return self.suggestcontinuation(action)
+        self.insert_action(self.F, self.G, action)
+        return self.suggest_continuation(action, amount)
 
-    def suggestcontinuation(self, action):
-        print(action.link)
-        print(action.domain.dom)
-        print("urls in domain")
-        print(action.domain.urls)
-        dayproposals = self.proposedaytimes(action.timestamp, 15*60, 10)
-        weekproposals = self.proposeweektimes(action.timestamp, 3)
-        timeproposals = combinetimeproposals(dayproposals, weekproposals)
+    def suggest_continuation(self, action, amount):
+        dayproposals = self.propose_daytimes(action.timestamp, 15*60, 10)
+        weekproposals = self.propose_weektimes(action.timestamp, 3)
+        timeproposals = combine_timeproposals(dayproposals, weekproposals)
         paths = pd.Series()
         # trail = [[],0]
-        breathtraverse(self.F, [(action.link, 0)], paths, 3, 10)
+        breathtraverse(self.F, [(action.link, 0)], [], paths, 3, 10)
         paths = paths.sort_values(ascending=False)
-        domainproposals = domainsuggestions(paths, self.urls)
-        return combinesuggestions(action, timeproposals, domainproposals, self.urls, 5)        
+        domainproposals = domain_suggestions(paths, self.urls)
+        return combine_suggestions(action, timeproposals, domainproposals, self.urls, amount)        
 
-    def suggeststart(self):
-        dayproposals = self.proposedaytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60, 10)
-        weekproposals = self.proposeweektimes(datetime.datetime.utcfromtimestamp(tm.time()), 3)
-        timeproposals = combinetimeproposals(dayproposals, weekproposals)
+    def suggest_start(self):
+        dayproposals = self.propose_daytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60, 10)
+        weekproposals = self.propose_weektimes(datetime.datetime.utcfromtimestamp(tm.time()), 3)
+        timeproposals = combine_timeproposals(dayproposals, weekproposals)
         trailproposals = [x.domain for (y, x) in self.intertrails]
         proposals = []
         domainproposals = []
@@ -187,10 +185,10 @@ class Proposer(object):
             proposals.append(sortedprops[:2])
         return proposals
 
-    def proposeweektimes(self, timestamp, amount):
+    def propose_weektimes(self, timestamp, amount):
         return self.weekdays[datetime.datetime.utcfromtimestamp(timestamp).weekday()][:amount]
 
-    def proposedaytimes(self, timestamp, r, amount):
+    def propose_daytimes(self, timestamp, r, amount):
         return self.daytime.getrange(timestamp, r)[:amount]
 
 
