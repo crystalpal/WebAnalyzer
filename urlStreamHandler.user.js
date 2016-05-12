@@ -5,6 +5,7 @@
 // @version     1
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @grant       GM_xmlhttpRequest
+// @grant       GM_addStyle
 // @run-at      document-end
 // ==/UserScript==
 
@@ -28,6 +29,7 @@ try {
         "Content-Length": data.length
       },
       onerror: function(error) {
+          console.log(data_string);
         console.log('Calling urlStreamHandler failed', error);
       },
       onload: onload
@@ -122,8 +124,44 @@ try {
     "html": html
   }, function(response) {
     try {
-      // Message to show JS ran without errors
+      // Message to show the python part ran without errors
       console.log("Predictive webbrowsing is active.");
+
+      // Loading in style elements
+      // Loading in through external css file only works on non-https websites
+      GM_addStyle('#ml_suggestionbox {'+
+        'position:absolute;bottom: 0;right: 0;'+
+        'width:230px;height: 20px;border:1px solid #ffffff;'+
+        'background-color:#333;'+
+        'padding: 15px 5px 10px 25px;'+
+        '-moz-box-shadow:-8px 8px 20px -6px #000;'+
+        '-webkit-box-shadow:-8px 8px 20px -6px #000;'+
+        'box-shadow:-8px 8px 20px -6px #000;'+
+        '-moz-border-radius-topleft: 25px;'+
+        '-webkit-border-top-left-radius: 25px;'+
+        'border-top-left-radius: 25px;'+
+        '-webkit-transition: height .5s ease;'+
+        '-moz-transition: height .5s ease;'+
+        '-ms-transition: height .5s ease;'+
+        '-o-transition: height .5s ease;'+
+        'transition: height .5s ease;}');
+      GM_addStyle('#ml_suggestionbox:hover{height: 150px;}');
+      GM_addStyle('#ml_suggestionbox.expanded {height: 150px;}');
+      GM_addStyle('#ml_suggestionbox h3{color: #f5f5f5;margin:0px;}');
+      GM_addStyle('#ml_suggestionbox .suggestions {'+
+        'display: none;color: #eee;list-style: disc;'+
+        'margin-left: 15px;padding: 8px;position: relative;'+
+        '-webkit-transition: display .5s ease;'+
+        '-moz-transition: display .5s ease;-ms-transition: display .5s ease;'+
+        '-o-transition: display .5s ease;transition: display .5s ease;}');
+      GM_addStyle('#ml_suggestionbox.expanded .suggestions,'+
+      '#ml_suggestionbox.popup .suggestions{display: block;}');
+      GM_addStyle('#ml_suggestionbox a,#ml_suggestionbox a:link,'+
+      '#ml_suggestionbox a:vistited {color: #eee !important;'+
+      'text-decoration: none !important;}');
+      GM_addStyle('#ml_suggestionbox a:hover,'+
+      '#ml_suggestionbox a:active {color: #f5f5ff;'+
+      'border-bottom: 1px solid #ffffff;text-decoration: none;}');
 
       /*
        * Show response from script in back-end here
@@ -134,14 +172,16 @@ try {
       data = JSON.parse(response.response);
       console.log(data);
 
-      if(!response.response.success)
-        return;
+     // if(!response.response.success)
+    //    return;
 
       // Use a CSS file for styling using greasemonkey
-      $("head").append (
+      /*$("head").append (
            '<link href="http://localhost:8000/style.css" '
          + 'rel="stylesheet" type="text/css">'
-      );
+      );*/
+
+
 
       // Append the suggestion box
       $("body").append('<div id="ml_suggestionbox" class="expanded"></div>');
