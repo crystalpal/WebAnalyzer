@@ -7,11 +7,9 @@ Created on Sat Apr  2 14:41:32 2016
 import networkx as nx
 import matplotlib.pyplot as plt
 import time as tm
-import copy
 import datetime
 import pandas as pd
 import os
-import sys
 from datastructures import Action, Domain, CircularList
 from utilities import combine_timeproposals, domain_suggestions, combine_suggestions
 from traverse import breathtraverse
@@ -19,7 +17,7 @@ from traverse import breathtraverse
 
 class Proposer(object):
 
-    def __init__(self, path, fillstructures):
+    def __init__(self, path, fillstructures=True):
         self.clicks = []   # A list containing every click action
         self.domains = {}  # A dictionary mapping domain names on domain objs
         self.urls = {}     # A dictionnary mapping urls on action objects
@@ -34,7 +32,7 @@ class Proposer(object):
                          3: pd.Series(), 4: pd.Series(), 5: pd.Series(),
                          6: pd.Series()}
         self.daytime = CircularList()
-        self.lastnode = Action(None, None, None, None, 
+        self.lastnode = Action(None, None, None, None,
                                tm.strptime("1980 1 1 1 1 1", "%Y %m %d %H %M %S"),
                                None)
 
@@ -49,7 +47,7 @@ class Proposer(object):
                        "silver", "gold", "red", "blue", "yellow", "green",
                        "purple", "white", "orange", "pink", "gray", "brown",
                        "white", "silver", "gold"]
-                       
+
         if fillstructures:
             self.fillstructures(path)
 
@@ -72,54 +70,54 @@ class Proposer(object):
                     # If an empty row (eg end of file) or JS link
                     if not row and "javascript" not in row.lower():
                         continue
-                    self.parseClick(str(row))
+                    self.parse_click(str(row))
             except:  # If an import still fails, skip & keep count
                 count += 1
                 print("Skipped file ", file)
         print("Finished reading, skipped files:", count)
 
-    def parseClick(self, inputline):
+    def parse_click(self, inputline):
         action = self.extract_action(inputline)
         if action is not None:
             self.insert_action(self.F, self.G, action)
 
     def extract_action(self, inputline):
-        #Parse inputline from default csv format and extract an Action object from it
+        # Parse inputline from default csv format and extract an Action object from it
         row = self.clean_file_row(inputline).split(',')
         timestamp = row[0]
         act = row[1]
-        print(row)
         if not act == "click" or "//" not in row[3]:
             return None
         previous = row[2]
         link = row[3]
         # Parse timestamp - everything except for miliseconds after the dot
-        timefmt = tm.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")        
-        #check if this is the first action in a sequence, first link might not have been registered as an action     
+        timefmt = tm.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")
+        # check if this is the first action in a sequence,
+        # first link might not have been registered as an action
         if len(self.clicks) == 0:
             self.create_action(act, None, previous, timefmt)
         currentaction = self.create_action(act, previous, link, timefmt)
         return currentaction
-        
+
     def create_action(self, act, previous, link, timefmt):
-         domain_index = link.index('//') + 2
-         domain = link[domain_index:link.index('/', domain_index)]
-         domain = domain.replace("www.", "")[:domain.rindex('.')]         
-         if "google" in link and "&" in link:
-             link = link[0:link.index('&')]
-         if domain not in self.domains.keys():
-             self.domains[domain] = Domain(domain)
-         clickaction =  Action(act, self.domains[domain], previous, link, timefmt, self.colors[len(self.clicks) % 9])
-         if clickaction.link not in self.domains[domain].urls.keys():
+        domain_index = link.index('//') + 2
+        domain = link[domain_index:link.index('/', domain_index)]
+        domain = domain.replace("www.", "")[:domain.rindex('.')]
+        if "google" in link and "&" in link:
+            link = link[0:link.index('&')]
+        if domain not in self.domains.keys():
+            self.domains[domain] = Domain(domain)
+        clickaction =  Action(act, self.domains[domain], previous, link, timefmt, self.colors[len(self.clicks) % 9])
+        if clickaction.link not in self.domains[domain].urls.keys():
             clickaction.domain.urls.set_value(clickaction.link, 1)
-         else:
-            self.domains[domain].urls[clickaction.link] += 1        
-         self.domains[domain].urls.sort_values(ascending=False)
-         return clickaction
+        else:
+            self.domains[domain].urls[clickaction.link] += 1
+        self.domains[domain].urls.sort_values(ascending=False)
+        return clickaction
 
     def insert_action(self, G, D, action):
         # check how far the last unloaded page was in the past, and start a new trail if necessary
-        if action.timestamp - self.lastnode.timestamp > 60*60:  # seconds = 1 hr
+        if action.timestamp - self.lastnode.timestamp > 60*60:  # 1 hr in sec
             self.trails.append([])
             self.intertrails.append((self.lastnode, action))
         self.clicks.append(action)
@@ -150,7 +148,7 @@ class Proposer(object):
                 D.add_edge(dom1, dom2)
         self.lastnode = action
 
-    def parse_action(self, inputline, amount):
+    def parse_action(self, inputline, amount=1):
         action = self.extract_action(inputline)
         if action is None:
             return None

@@ -62,25 +62,25 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
             print('{:<15}: {}'.format(action_str, url))
         inp = ts + ", " + action_str + ", " + url + ", " + target
         print(inp, file=logfile)
-        suggestions = proposer.parseAction(inp)
+        suggestions = proposer.parse_action(inp)
+        print("SUGGESTIONS")
         print(suggestions)
-        if not suggestions == None:
+        if suggestions is not None:
             response = {
                 'success': True,
                 'guesses': suggestions
             }
-        else :
+        else:
             response = {
                 'success': True,
                 "guesses" : ["Test"]
             }
-            jsonstr = bytes(json.dumps(response), "UTF-8")
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.send_header("Content-length", len(jsonstr))
-            self.end_headers()
-            self.wfile.write(jsonstr)
-           
+        jsonstr = bytes(json.dumps(response), "UTF-8")
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.send_header("Content-length", len(jsonstr))
+        self.end_headers()
+        self.wfile.write(jsonstr)
 
 
 def start_from_csv(filenames):
