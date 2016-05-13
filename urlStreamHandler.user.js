@@ -129,7 +129,7 @@ try {
 
       // Loading in style elements
       // Loading in through external css file only works on non-https websites
-      GM_addStyle('#ml_suggestionbox {'+
+      /*GM_addStyle('#ml_suggestionbox {'+
         'position:fixed;bottom: 0;right: 0;'+
         'width:230px;height: 20px;border:1px solid #ffffff;'+
         'background-color:#333;'+
@@ -161,7 +161,58 @@ try {
       'text-decoration: none !important;}');
       GM_addStyle('#ml_suggestionbox a:hover,'+
       '#ml_suggestionbox a:active {color: #f5f5ff;'+
-      'border-bottom: 1px solid #ffffff;text-decoration: none;}');
+      'border-bottom: 1px solid #ffffff;text-decoration: none;}');*/
+    GM_addStyle('#ml_suggestionbox {'+
+    'font-size:13px;'+
+    'width: 0px;background: #f5f5f5;'+
+    'color: #888;position: fixed;right:0;top: 106px;z-index: 10000;'+
+    '-webkit-transition: all .8s ease;'+
+    '-moz-transition: all .8s ease;'+
+    '-ms-transition: all .8s ease;'+
+    '-o-transition: all .8s ease;'+
+    'transition: all .8s ease;}');
+    GM_addStyle('#ml_suggestionbox.expanded,#ml_suggestionbox:hover {'+
+    'width: 200px;right: -200px;}');
+    GM_addStyle('#ml_suggestionbox * {'+
+    '-moz-box-sizing: content-box;'+
+    '-webkit-box-sizing: content-box;box-sizing: content-box;}');
+    GM_addStyle('#ml_inner {'+
+    '-webkit-box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
+    '-moz-box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
+    'box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
+    'border: 1px solid rgba(23, 24, 25, .14);visibility: hidden;}');
+    GM_addStyle('#ml_suggestionbox ul.suggestions {'+
+    'list-style: none;padding-left: 0px;margin-left: 0px;text-align: left;}');
+    GM_addStyle('#ml_suggestionbox ul.suggestions li {'+
+    'margin-top:5px;width:250px;}');
+    GM_addStyle('#ml_suggestionbox a {'+
+    'color: #333;text-decoration: none;'+
+    'width: 250px;padding: 3px 10px 3px 3px;}');
+    GM_addStyle('#ml_suggestionbox .suggestions li a:hover,'+
+    '#ml_suggestionbox .suggestions li a:active {'+
+    'color: #888;border-bottom: 1px solid #888;text-decoration: none;}');
+    GM_addStyle('#ml_suggestionbox .title {'+
+    'padding: 15px;background-color: #343436;'+
+    'font-size:15px; color: #e6e6e6;'+
+    'font-family: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;}');
+    GM_addStyle('#ml_suggestionbox .switcher-title {'+
+    'font-size: 12px;font-family: Raleway, Arial, Helvetica, sans-serif;'+
+    'height: 38px;line-height: 38px;'+
+    'text-align: center;border-top: 1px solid #fff;}');
+    GM_addStyle('#ml_suggestionbox .switch-button {'+
+    'width: 40px;height: 38px;'+
+    'line-height: 38px;color: #f5f5f5;'+
+    'position: absolute;top: 49px;'+
+    'left: -41px;background: #343436;'+
+    'cursor: pointer;font-size: 26px;'+
+    'text-align: center;'+
+    'font-family:"Times New Roman";'+
+    'border: 1px solid #f5f5f5;text-decoration: none;'+
+    'display: block;border: 1px solid #f5f5f5;'+
+    '-webkit-box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
+    '-moz-box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
+    'box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
+    'border: 1px solid rgba(23, 24, 25, .14);}');
 
       /*
        * Show response from script in back-end here
@@ -173,11 +224,12 @@ try {
       console.log(data);
 
       // Append the suggestion box
-      $("body").append('<div id="ml_suggestionbox" class="expanded"></div>');
+      $("body").append('<div id="ml_suggestionbox" class="expanded" style="right: 0px;">'+
+            '<div id="ml_inner" style="visibility: visible;"></div></div>');
 
       if(!data.success)
-        $("#ml_suggestionbox").append('<h3>No suggestions found</h3>');
-      else $("#ml_suggestionbox").append('<h3>Suggestions</h3>');
+        $("#ml_inner").append('<div class="title">No suggestions found</div>');
+      else $("#ml_inner").append('<div class="title">Suggestions</div>');
 
       // Add the suggested links to suggestionbox
 
@@ -187,12 +239,13 @@ try {
                          .replace("https://", "")
                          .split('/')[0];
         suggestions += '<li>';
-        suggestions +='<a href="'+val+'" title="Full link: '+val
-                    +'" style="color:#eee;text-decoration: none;">';
+        suggestions +='<a href="'+val+'" title="Full link: '+val+'">&#9830; ';
         suggestions += name + '</a></li>';
       });
-      $("#ml_suggestionbox").append('<ul class="suggestions">'
-                                    +suggestions+'</ul>');
+      $("#ml_inner").append('<ul class="suggestions">'+suggestions+'</ul>');
+      $("#ml_inner").append('<div class="switcher-title">'+
+        '<a id="reset_styles" href="#" class="simple">Settings</a></div>');
+      $("#ml_suggestionbox").append('<div class="switch-button">S</div>');
       // TODO: Do something (e.g. show a top bar with the final link of the
       //       suspected sequence)
       /*var best_guess = data.guesses[0][0];
@@ -207,14 +260,6 @@ try {
 
       // Helper function for showing on mouseover - together with CSS3
       $(function(){
-          $('#ml_suggestionbox').on("mouseenter", function(){
-            setTimeout(function(){
-              $('#ml_suggestionbox').addClass("popup");
-            }, 500);
-          }).on("mouseleave", function() {
-            $(this).removeClass("popup");
-          });
-
           // Collapse box after some time to minimize distration
           setTimeout(function(){
               $('#ml_suggestionbox').removeClass("expanded")
