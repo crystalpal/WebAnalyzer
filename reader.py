@@ -32,9 +32,7 @@ class Proposer(object):
                          3: pd.Series(), 4: pd.Series(), 5: pd.Series(),
                          6: pd.Series()}
         self.daytime = CircularList()
-        self.lastnode = Action(None, None, None, None,
-                               tm.strptime("1980 1 1 1 1 1", "%Y %m %d %H %M %S"),
-                               None)
+        self.lastnode = Action(None, None, None, None, None, None)
 
         self.F = nx.MultiDiGraph()
         self.G = nx.MultiDiGraph()
@@ -51,13 +49,6 @@ class Proposer(object):
         if fillstructures:
             self.fillstructures(path)
 
-    def clean_file_row(self, input):
-        """ Cleans the input string from double quotes, \n and whitespaces """
-        input = input.rstrip()
-        input = "".join(input.split())
-        input = input.replace("\"", "")
-        return input
-
     def fillstructures(self, path):
         """ Read out all csv data files from a given directory """
         print("Reading all previous data files...")
@@ -70,24 +61,44 @@ class Proposer(object):
                     # If an empty row (eg end of file) or JS link
                     if not row and "javascript" not in row.lower():
                         continue
-                    self.parse_click(str(row))
-            except:  # If an import still fails, skip & keep count
+                    self.parse_action(str(row), file_action=True)
+            except:  # If an import still fails, skip file & keep count
                 count += 1
-                print("Skipped file ", file)
+                print("Skipped file:", file)
         print("Finished reading, skipped files:", count)
 
-    def parse_click(self, inputline):
-        action = self.extract_action(inputline)
-        if action is not None:
-            self.insert_action(self.F, self.G, action)
+    def clean_file_row(self, input):
+        """ Cleans the input string from double quotes, \n and whitespaces """
+        input = input.rstrip()
+        input = "".join(input.split())
+        input = input.replace("\"", "")
+        return input
 
-    def extract_action(self, inputline):
-        # Parse inputline from default csv format and extract an Action object from it
+    def parse_action(self, inputline, file_action=False, suggestion_amount=5):
+        """ Gives N suggestions from a comma seperated inputline """
         row = self.clean_file_row(inputline).split(',')
-        timestamp = row[0]
         act = row[1]
+        # If a load action, return suggestions
+        if act == "load" and not file_action:
+            if(self.lastnode.domain is None):
+                domain = self.get_domain(row[2])
+                self.lastnode.update_link(row[2], self.domains[domain])
+            print(self.lastnode)
+            return self.suggest_continuation(self.lastnode, suggestion_amount)
+        
+        # Ignore everything but (valid) click actions
         if not act == "click" or "//" not in row[3]:
             return None
+        action = self.extract_action(row)
+        self.insert_action(self.F, self.G, action, file_action=file_action)
+        if not file_action:
+            return self.suggest_continuation(action, suggestion_amount)
+
+    def extract_action(self, row):
+        """ Extracts and parses the different parts (eg. action)
+        of the comma seperated (default csv format) input """
+        timestamp = row[0]
+        act = row[1]
         previous = row[2]
         link = row[3]
         # Parse timestamp - everything except for miliseconds after the dot
@@ -96,17 +107,11 @@ class Proposer(object):
         # first link might not have been registered as an action
         if len(self.clicks) == 0:
             self.create_action(act, None, previous, timefmt)
-        currentaction = self.create_action(act, previous, link, timefmt)
-        return currentaction
-
+        current_action = self.create_action(act, previous, link, timefmt)
+        return current_action
+    
     def create_action(self, act, previous, link, timefmt):
-        domain_index = link.index('//') + 2
-        domain = link[domain_index:link.index('/', domain_index)]
-        domain = domain.replace("www.", "")[:domain.rindex('.')]
-        if "google" in link and "&" in link:
-            link = link[0:link.index('&')]
-        if domain not in self.domains.keys():
-            self.domains[domain] = Domain(domain)
+        domain = self.get_domain(link)
         clickaction =  Action(act, self.domains[domain], previous, link, timefmt, self.colors[len(self.clicks) % 9])
         if clickaction.link not in self.domains[domain].urls.keys():
             clickaction.domain.urls.set_value(clickaction.link, 1)
@@ -115,7 +120,18 @@ class Proposer(object):
         self.domains[domain].urls.sort_values(ascending=False)
         return clickaction
 
-    def insert_action(self, G, D, action):
+    def get_domain(self, link):
+        """ Get domain from link and add to the pandas domain list """
+        domain_index = link.index('//') + 2
+        domain = link[domain_index:link.index('/', domain_index)]
+        domain = domain.replace("www.", "")  # [:domain.rindex('.')]
+        if "google" in link and "&" in link:
+            link = link[0:link.index('&')]
+        if domain not in self.domains.keys():
+            self.domains[domain] = Domain(domain)
+        return domain
+
+    def insert_action(self, G, D, action, file_action=False):
         # check how far the last unloaded page was in the past, and start a new trail if necessary
         if action.timestamp - self.lastnode.timestamp > 60*60:  # 1 hr in sec
             self.trails.append([])
@@ -146,16 +162,12 @@ class Proposer(object):
             if not dom1.dom == dom2.dom:
                 self.daytime.add(dom2, action.timestamp)
                 D.add_edge(dom1, dom2)
-        self.lastnode = action
+        if not file_action:  # Only websites from a current action
+            self.lastnode = action
 
-    def parse_action(self, inputline, amount=1):
-        action = self.extract_action(inputline)
-        if action is None:
-            return None
-        self.insert_action(self.F, self.G, action)
-        return self.suggest_continuation(action, amount)
-
-    def suggest_continuation(self, action, amount):
+    def suggest_continuation(self, action, suggestion_amount):
+        """ Gathers site proposals based on time, popular domains and current
+        click stream """
         dayproposals = self.propose_daytimes(action.timestamp, 15*60, 10)
         weekproposals = self.propose_weektimes(action.timestamp, 3)
         timeproposals = combine_timeproposals(dayproposals, weekproposals)
@@ -164,7 +176,7 @@ class Proposer(object):
         breathtraverse(self.F, [(action.link, 0)], [], paths, 3, 10)
         paths = paths.sort_values(ascending=False)
         domainproposals = domain_suggestions(paths, self.urls)
-        return combine_suggestions(action, timeproposals, domainproposals, self.urls, amount)        
+        return combine_suggestions(action, timeproposals, domainproposals, self.urls, suggestion_amount)        
 
     def suggest_start(self):
         dayproposals = self.propose_daytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60, 10)

@@ -65,15 +65,19 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
         suggestions = proposer.parse_action(inp)
         print("SUGGESTIONS")
         print(suggestions)
-        if suggestions is not None:
+        if suggestions is not None and len(suggestions) > 0:
             response = {
                 'success': True,
                 'guesses': suggestions
             }
         else:
+            # If no suggestions at all found (probably because of no prev data)
+            # Return the top 5 most popular websites according to wikipedia
             response = {
-                'success': True,
-                "guesses" : ["Test"]
+                'success': False,
+                'guesses': ["http://www.google.com", "http://www.facebook.com",
+                            "http://www.youtube.com", "http://www.amazon.com", 
+                            "http://www.wikipedia.org"]
             }
         jsonstr = bytes(json.dumps(response), "UTF-8")
         self.send_response(200)

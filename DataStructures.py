@@ -23,8 +23,20 @@ class Action(object):
         self.domain = domain
         self.previous = previous
         self.link = link
-        self.timestamp = tm.mktime(timeformat)
+        if timeformat is None:  # If no timeformat given, take current time
+           self.timestamp = round(tm.time(),1)
+        else:
+            self.timestamp = tm.mktime(timeformat)
         self.color = color
+
+    def __str__(self):
+        return ("Action: "+str(self.action)
+                +", Link: "+str(self.link)
+                +", Previous: "+str(self.previous))
+
+    def update_link(self, new_link, domain):
+        self.link = new_link
+        self.domain = domain
 
 
 class Domain(object):

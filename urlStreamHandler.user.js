@@ -130,7 +130,7 @@ try {
       // Loading in style elements
       // Loading in through external css file only works on non-https websites
       GM_addStyle('#ml_suggestionbox {'+
-        'position:absolute;bottom: 0;right: 0;'+
+        'position:fixed;bottom: 0;right: 0;'+
         'width:230px;height: 20px;border:1px solid #ffffff;'+
         'background-color:#333;'+
         'padding: 15px 5px 10px 25px;'+
@@ -172,22 +172,15 @@ try {
       data = JSON.parse(response.response);
       console.log(data);
 
-     // if(!response.response.success)
-    //    return;
-
-      // Use a CSS file for styling using greasemonkey
-      /*$("head").append (
-           '<link href="http://localhost:8000/style.css" '
-         + 'rel="stylesheet" type="text/css">'
-      );*/
-
-
-
       // Append the suggestion box
       $("body").append('<div id="ml_suggestionbox" class="expanded"></div>');
-      $("#ml_suggestionbox").append('<h3>Suggestions</h3>');
+
+      if(!data.success)
+        $("#ml_suggestionbox").append('<h3>No suggestions found</h3>');
+      else $("#ml_suggestionbox").append('<h3>Suggestions</h3>');
 
       // Add the suggested links to suggestionbox
+
       var suggestions = "";
       $.each(data.guesses, function(index, val) {
         var name = val.replace("http://", "")

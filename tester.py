@@ -9,10 +9,10 @@ def readpath(path, output, outputtype):
     userfiles = pd.Series()
     for file in os.listdir(path):
         user = file.split("_")[0]
-        if not user in userfiles.keys():
+        if user not in userfiles.keys():
             userfiles[user] = []
         userfiles[user].append(file)
-        userfiles.sort()
+        userfiles.sort_values(inplace=True)
     with open(output, outputtype) as f:
         for user in userfiles.keys():
             if not len(userfiles[user]) == 0:
@@ -41,25 +41,27 @@ def readpath(path, output, outputtype):
                             sys.exit()
                     totalscore = 0
                     for rowindex in range(0, len(allrows[datacut:])-1):
-                        proposals = proposer.parse_action(allrows[rowindex], 5) 
-                        if not proposals == None:
+                        proposals = proposer.parse_action(allrows[rowindex], 5)
+                        if proposals is not None:
                             for i in range(0, len(proposals)):
                                 if proposals[i] == allrows[rowindex+1].split(',')[3]:
                                     totalscore += (len(proposals) - i)
                                     break
-                    totalscore /= (len(allrows) - datacut)    
+                    totalscore /= (len(allrows) - datacut)
                     f.write(user + " " + str(totalscore) + " " + str(len(allrows[datacut:])-1) + "\n" )     
-            
+
+
 def clean_file_row(input):
         """ Cleans the input string from double quotes, \n and whitespaces """
         input = input.rstrip()
         input = "".join(input.split())
         input = input.replace("\"", "")
         return input
-        
 
-def test_together():        
+
+def test_together():  
     readpath('./data', './results/alldata.txt', 'w+')
+
 
 def test_seperately():
     users = []
@@ -67,8 +69,7 @@ def test_seperately():
         users.append("u"+str(i))
     for user in users:
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
-        
+
+
 #test_together()
 test_seperately()
-
- 
