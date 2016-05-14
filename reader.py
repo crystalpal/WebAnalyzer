@@ -34,8 +34,8 @@ class Proposer(object):
         self.daytime = CircularList()
         self.lastnode = Action(None, None, None, None, None, None)
 
-        self.F = nx.MultiDiGraph()
-        self.G = nx.MultiDiGraph()
+        self.F = nx.MultiDiGraph()  # Graph for all the URLs
+        self.G = nx.MultiDiGraph()  # Graph for all the domains
 
         # Colors for graph representation
         self.colors = ["red", "blue", "yellow", "green", "purple", "white",
@@ -149,7 +149,7 @@ class Proposer(object):
             self.domains[domain] = Domain(domain)
         return domain
 
-    def insert_action(self, G, D, action, file_action=False):
+    def insert_action(self, url_graph, domain_graph, action, file_action=False):
         # check how far the last unloaded page was in the past, and start a new trail if necessary
         if action.timestamp - self.lastnode.timestamp > 60*60:  # 1 hr in sec
             self.trails.append([])
@@ -162,16 +162,19 @@ class Proposer(object):
             time = action.timestamp - previous.timestamp
             if time > self.maxtime:
                 self.maxtime = time
-            if not (previous.link, action.link) in G.edges():
-                G.add_edge(previous.link, action.link, weight=0, time=0, trails=set())
+            if not (previous.link, action.link) in url_graph.edges():
+                url_graph.add_edge(previous.link, action.link, weight=0,
+                                   totaltime=0, avgtime=0, trails=set())
             self.trails[-1].append((previous, action, time))
-            G[previous.link][action.link][0]['weight'] += 1
-            G[previous.link][action.link][0]['time'] = (G[previous.link][action.link][0]['time'] + time)/2
-            G[previous.link][action.link][0]['trails'].add(len(self.trails))
+            graph_edge = url_graph[previous.link][action.link][0]
+            graph_edge['weight'] += 1
+            graph_edge['totaltime'] += time
+            graph_edge['avgtime'] = graph_edge['totaltime']/graph_edge['weight']
+            graph_edge['trails'].add(len(self.trails))
             dom1 = previous.domain
             dom2 = action.domain
             if not dom1.dom == dom2.dom:
-                D.add_edge(dom1, dom2)
+                domain_graph.add_edge(dom1, dom2)
         if not file_action:  # Only websites from a current action
             self.lastnode = action
 
@@ -210,8 +213,8 @@ class Proposer(object):
         weekday = datetime.datetime.utcfromtimestamp(timestamp).weekday()
         otherdays = pd.Series()
         for day in [x for x in range(7) if x != weekday]:
-            otherdays.add(self.weekdays(day))
-        thisday = self.weekdays(weekday)
+            otherdays.add(self.weekdays[day])
+        thisday = self.weekdays[weekday]
         possibledomains = pd.Series()
         for domain in otherdays.keys():
             if domain in thisday.keys() and thisday[domain] > otherdays[domain]*3/5/7:
