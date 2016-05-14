@@ -8,9 +8,12 @@ dataStructures.py
 import time as tm
 import pandas as pd
 from utilities import gettimeofday
+from itertools import chain
 
 
 class Action(object):
+    """ This datastructure is a wrapper for events or action; mainly click
+    """
     action = ""
     domain = ""
     previous = ""
@@ -56,41 +59,28 @@ class CircularList():
         self.items = [[] for x in range(60*60*24)]
 
     def add(self, domain, timestamp):
+        """ Add a domain to a timeslot within a day """
         x = gettimeofday(timestamp)
-        if len(self.items[x]) == 0:
+        if len(self.items[x]) == 0:  # If empty, initialize cell
             self.items[x] = []
-            self.items[x].append(domain.dom)
+        self.items[x].append(domain)
 
     def getrange(self, timestamp, seconds):
-        x = gettimeofday(timestamp)
-        start = x - seconds
-        end = x + seconds
-        alldomains = pd.Series()
-        if start < 0:
-            start = 60*60*24 - start
-            for i in range(x, end) + range(start, 60*60*24):
-                for dom in self.items[i]:
-                    if dom in alldomains.keys():
-                        val = alldomains.get_value(dom) + 1
-                        alldomains.set_value(dom, val)
-                    else:
-                        alldomains.set_value(dom, 1)
-        elif end > 60*60*24:
-            end = 0 + end
-            for i in range(0, end) + range(start, x):
-                for dom in self.items[i]:
-                    if dom in alldomains.keys():
-                        val = alldomains.get_value(dom) + 1
-                        alldomains.set_value(dom, val)
-                    else:
-                        alldomains.set_value(dom, 1)
+        """ Suggest domains at the given timestamp within a given deviation
+        based on their occurence count """
+        start = gettimeofday(timestamp - seconds)
+        end = gettimeofday(timestamp + seconds)
+        if start > end:  # start < 0 or end > 60*60*24:
+            rangechain = chain(range(0,end), range(start, 60*60*24))
         else:
-            for i in range(start, end):
-                for dom in self.items[i]:
-                    if dom in alldomains.keys():
-                        val = alldomains.get_value(dom) + 1
-                        alldomains.set_value(dom, val)
-                    else:
-                        alldomains.set_value(dom, 1)
+            rangechain = range(start,end)
+        alldomains = pd.Series()
+        for i in rangechain:
+            for dom in self.items[i]:
+                val = 1
+                if dom in alldomains.keys():
+                    val = alldomains.get_value(dom) + val
+                alldomains.set_value(dom, val)
+        # Sort all domains based on their occurence count
         alldomains = alldomains.sort_values(ascending=False)
         return alldomains

@@ -11,7 +11,7 @@ import datetime
 import pandas as pd
 import os
 from datastructures import Action, Domain, CircularList
-from utilities import combine_timeproposals, domain_suggestions, combine_suggestions
+from utilities import combine_timeproposals, domain_suggestions, combine_suggestions, parse_timestamp
 from traverse import breathtraverse
 
 
@@ -74,51 +74,69 @@ class Proposer(object):
         input = input.replace("\"", "")
         return input
 
-    def parse_action(self, inputline, file_action=False, suggestion_amount=5):
+    def parse_action(self, inputline, file_action=False, suggest_amount=5):
         """ Gives N suggestions from a comma seperated inputline """
         row = self.clean_file_row(inputline).split(',')
         act = row[1]
         # If a load action, return suggestions
-        if act == "load" and not file_action:
-            if(self.lastnode.domain is None):
-                domain = self.get_domain(row[2])
-                self.lastnode.update_link(row[2], self.domains[domain])
-            print(self.lastnode)
-            return self.suggest_continuation(self.lastnode, suggestion_amount)
+        if act == "load":
+            domain = self.get_domain(row[2])
+            self.insert_in_timelists(domain, parse_timestamp(row[0]))
+            if not file_action:
+                if self.lastnode.domain is None:
+                    self.lastnode.update_link(row[2], self.domains[domain])
+                print(self.lastnode)
+                return self.suggest_continuation(self.lastnode, suggest_amount)
         
         # Ignore everything but (valid) click actions
         if not act == "click" or "//" not in row[3]:
             return None
         action = self.extract_action(row)
         self.insert_action(self.F, self.G, action, file_action=file_action)
+        # Note: Ideally, only load events should give suggestions feedback
+        # But with the growing amount of JavaScript websites (e.g. YouTube)
+        # Only the initial load triggers this event
         if not file_action:
-            return self.suggest_continuation(action, suggestion_amount)
+            return self.suggest_continuation(action, suggest_amount)
 
     def extract_action(self, row):
         """ Extracts and parses the different parts (eg. action)
         of the comma seperated (default csv format) input """
-        timestamp = row[0]
+        timestamp = parse_timestamp(row[0], seconds=False)
         act = row[1]
         previous = row[2]
         link = row[3]
-        # Parse timestamp - everything except for miliseconds after the dot
-        timefmt = tm.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")
         # check if this is the first action in a sequence,
         # first link might not have been registered as an action
         if len(self.clicks) == 0:
-            self.create_action(act, None, previous, timefmt)
-        current_action = self.create_action(act, previous, link, timefmt)
+            self.create_action(act, None, previous, timestamp)
+        current_action = self.create_action(act, previous, link, timestamp)
         return current_action
     
     def create_action(self, act, previous, link, timefmt):
         domain = self.get_domain(link)
-        clickaction =  Action(act, self.domains[domain], previous, link, timefmt, self.colors[len(self.clicks) % 9])
+        clickaction =  Action(act, self.domains[domain], previous, link, 
+                              timefmt, self.colors[len(self.clicks) % 9])
         if clickaction.link not in self.domains[domain].urls.keys():
             clickaction.domain.urls.set_value(clickaction.link, 1)
         else:
             self.domains[domain].urls[clickaction.link] += 1
         self.domains[domain].urls.sort_values(ascending=False)
         return clickaction
+        
+    def insert_in_timelists(self, domain, timestamp):
+        """ Insert the loaded domain in the time-based suggestion lists """
+        domain = self.domains[domain]
+        # Add to a time-of-day list
+        self.daytime.add(domain.dom, timestamp)
+        # Add to a day-of-week list
+        weekday = tm.gmtime(timestamp).tm_wday
+        val = 1
+        if domain in self.weekdays[weekday].keys():
+            val = self.weekdays[weekday].get_value(domain) + val
+        self.weekdays[weekday].set_value(domain, val)
+        # Sort on occurence count
+        self.weekdays[weekday] = self.weekdays[weekday].sort_values(ascending=False)
 
     def get_domain(self, link):
         """ Get domain from link and add to the pandas domain list """
@@ -152,15 +170,7 @@ class Proposer(object):
             G[previous.link][action.link][0]['trails'].add(len(self.trails))
             dom1 = previous.domain
             dom2 = action.domain
-            weekday = tm.gmtime(action.timestamp).tm_wday
-            if dom2.dom in self.weekdays[weekday].keys():
-                val = self.weekdays[weekday].get_value(dom2.dom) + 1
-                self.weekdays[weekday].set_value(dom2.dom, val)
-            else:
-                self.weekdays[weekday].set_value(dom2.dom, 1)
-            self.weekdays[weekday] = self.weekdays[weekday].sort_values(ascending=False)
             if not dom1.dom == dom2.dom:
-                self.daytime.add(dom2, action.timestamp)
                 D.add_edge(dom1, dom2)
         if not file_action:  # Only websites from a current action
             self.lastnode = action
@@ -168,6 +178,7 @@ class Proposer(object):
     def suggest_continuation(self, action, suggestion_amount):
         """ Gathers site proposals based on time, popular domains and current
         click stream """
+        print("Creating proposals")
         dayproposals = self.propose_daytimes(action.timestamp, 15*60, 10)
         weekproposals = self.propose_weektimes(action.timestamp, 3)
         timeproposals = combine_timeproposals(dayproposals, weekproposals)

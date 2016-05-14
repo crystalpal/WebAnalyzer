@@ -19,11 +19,21 @@ def line_prepender(filename, line):
 
 
 def gettimeofday(timestamp):
+    """" Returns the time of day in seconds"""
     time = tm.gmtime(timestamp)
     hours = (time.tm_hour)*60*60
     minutes = time.tm_min * 60
     seconds = time.tm_sec
     return hours + minutes + seconds
+    
+
+def parse_timestamp(timestamp, seconds=True):
+    """ Parse timestamp - everything except for miliseconds after the dot
+    """
+    parsed = tm.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")
+    if not seconds: 
+        return parsed
+    return tm.mktime(parsed)
 
 
 def addtopath(paths, n, score):
