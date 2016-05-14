@@ -93,7 +93,7 @@ def start_from_csv(filenames):
     for filename in filenames:
         with open(filename, 'r') as csv_file:
             # TODO: Incrementally train your model based on these files
-            print('Processing {}'.format(filename))
+            print('Processing {}'.format(csv_file))
 
 
 def main(argv=None):

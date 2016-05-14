@@ -13,6 +13,7 @@ import os
 from datastructures import Action, Domain, CircularList
 from utilities import combine_timeproposals, domain_suggestions, combine_suggestions, parse_timestamp
 from Traverse import breathtraverse
+import sys
 
 
 class Proposer(object):
@@ -81,7 +82,7 @@ class Proposer(object):
         
         if act == "load" and not file_action and self.lastnode.link is not None:
             if not self.lastnode.link == row[2]:
-                row[1] == "click"
+                row[1] = "click"
                 act = "click"
                 row[3] = row[2]
                 row[2] = self.lastnode.link
@@ -199,7 +200,8 @@ class Proposer(object):
         breathtraverse(self.F, [(action.link, 0)], [], paths, 3, 10)
         paths = paths.sort_values(ascending=False)
         domainproposals = domain_suggestions(paths, self.urls)
-        return combine_suggestions(action, timeproposals, domainproposals, self.urls, suggestion_amount)        
+        suggestions = combine_suggestions(action, timeproposals, domainproposals, self.urls, suggestion_amount)    
+        return suggestions  
 
     def suggest_start(self, amount):
         dayproposals = self.propose_daytimes(datetime.datetime.utcfromtimestamp(tm.time()), 25*60)

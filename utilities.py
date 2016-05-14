@@ -7,6 +7,7 @@ utilities.py
 """
 import time as tm
 import pandas as pd
+import sys
 
 
 def line_prepender(filename, line):
@@ -77,16 +78,19 @@ def combine_suggestionstime(timeproposals, domainsuggestions):
 
 def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount):
     suggestions = []
-    '''
+    
     for domain in domainsuggestions.keys()[:1]:
         for d in domainsuggestions[domain][:1]:
             if d not in suggestions:
                 suggestions.append(d)
+    print("suggestions")
+    print(suggestions)
     for domain in domainsuggestions.keys()[1:4]:
         for d in domainsuggestions[domain][:1]:
             if d not in suggestions:
                 suggestions.append(d)
-    '''
+    print("suggestions")
+    print(suggestions)
     domains = [x for x in timeproposals.keys() if x not in suggestions]
     for domain in domains:
         if domain in domainsuggestions.keys():
@@ -94,7 +98,8 @@ def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount)
                 if d not in suggestions:
                     suggestions.append(d)
                     #return suggestions
-    
+    print("suggestions")
+    print(suggestions)
     length = 0
     cur = len(suggestions)
     if amount > cur:               
@@ -105,7 +110,7 @@ def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount)
     if len(suggestions) < amount:
         for i in range(0, length):
             suggestions.append(current.domain.urls.keys()[i])
-    '''
+    
     if len(suggestions) < amount:
         for domain in domainsuggestions.keys():
             for d in domainsuggestions[domain][:1]:
@@ -113,7 +118,8 @@ def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount)
                     suggestions.append(d)
                     if len(suggestions) == amount:
                         return suggestions
-    '''
+    print("suggestions")
+    print(suggestions)
     return suggestions
 
 

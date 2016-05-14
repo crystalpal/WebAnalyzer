@@ -28,21 +28,17 @@ def readpath(path, output, outputtype):
                             # If an empty row (eg end of file) or JS link
                             if not row and "javascript" not in row.lower():
                                 continue
-                            print(row)
                             allrows.append(row)
                 except:  # If an import still fails, skip & keep count
                     print("Skipped file ", file)
             datacut = round(len(allrows)/100*80)
             proposer = Proposer(path, False)
             for row in allrows[:datacut]:
-                try:
-                    proposer.parseClick(row)
-                except:
-                    print(file)
-                    sys.exit()
+                    proposer.parse_action(row)
+                    
             totalscore = 0
             for rowindex in range(0, len(allrows[datacut:])-1):
-                proposals = proposer.parse_action(allrows[rowindex], 5)
+                proposals = proposer.parse_action(allrows[rowindex], False, 5)
                 if proposals is not None:
                     for i in range(0, len(proposals)):
                         if proposals[i] == allrows[rowindex+1].split(',')[3]:
@@ -72,5 +68,5 @@ def test_seperately():
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
 
 
-#test_together()
+test_together()
 test_seperately()
