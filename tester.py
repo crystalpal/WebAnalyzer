@@ -35,7 +35,6 @@ def readpath(path, output, outputtype):
             proposer = Proposer(path, False)
             for row in allrows[:datacut]:
                     proposer.parse_action(row)
-                    
             totalscore = 0
             for rowindex in range(0, len(allrows[datacut:])-1):
                 proposals = proposer.parse_action(allrows[rowindex], False, 5)
@@ -49,11 +48,11 @@ def readpath(path, output, outputtype):
 
 
 def clean_file_row(input):
-        """ Cleans the input string from double quotes, \n and whitespaces """
-        input = input.rstrip()
-        input = "".join(input.split())
-        input = input.replace("\"", "")
-        return input
+    """ Cleans the input string from double quotes, \n and whitespaces """
+    input = input.rstrip()
+    input = "".join(input.split())
+    input = input.replace("\"", "")
+    return input
 
 
 def test_together():  

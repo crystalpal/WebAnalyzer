@@ -24,11 +24,20 @@ try {
       var name = name.replace("http://", "")
                        .replace("https://", "")
                        .replace("www.", "");
+      // Clean out what shouldnt be used according to Google best practises
       if(name.length > maxlength) name = name.split("#")[0];
       if(name.length > maxlength) name = name.split("?")[0];
-      while(name.contains('/') && name.length > maxlength) {
-          name = name.substring(0, name.lastIndexOf('/'));
-      }
+
+      // Show only last part to be specific about page
+      if(name.lastIndexOf('/') == name.length -1) name = name.slice(0, -1);
+      if(name.split('/').length -1 > 1)
+        name = name.slice(0, name.indexOf('/'))
+                + "/..."
+                + name.slice(name.lastIndexOf('/'), name.length);
+
+      /*while(name.contains('/') && name.length > maxlength) {
+        name = name.substring(0, name.lastIndexOf('/'));
+        }*/
       return name;
   }
 
