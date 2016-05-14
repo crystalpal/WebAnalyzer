@@ -36,7 +36,7 @@ def readpath(path, output, outputtype):
             proposer = Proposer(path, False)
             for row in allrows[:datacut]:
                 try:
-                    proposer.parseClick(row)
+                    proposer.parse_action(row)
                 except:
                     print(file)
                     sys.exit()
@@ -53,11 +53,11 @@ def readpath(path, output, outputtype):
 
 
 def clean_file_row(input):
-        """ Cleans the input string from double quotes, \n and whitespaces """
-        input = input.rstrip()
-        input = "".join(input.split())
-        input = input.replace("\"", "")
-        return input
+    """ Cleans the input string from double quotes, \n and whitespaces """
+    input = input.rstrip()
+    input = "".join(input.split())
+    input = input.replace("\"", "")
+    return input
 
 
 def test_together():  
