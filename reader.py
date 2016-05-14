@@ -190,7 +190,7 @@ class Proposer(object):
         return combine_suggestions(action, timeproposals, domainproposals, self.urls, suggestion_amount)        
 
     def suggest_start(self, amount):
-        dayproposals = self.propose_daytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60)
+        dayproposals = self.propose_daytimes(datetime.datetime.utcfromtimestamp(tm.time()), 25*60)
         weekproposals = self.propose_weektimes(datetime.datetime.utcfromtimestamp(tm.time()))
         timeproposals = combine_timeproposals(dayproposals, weekproposals, amount)
         trailproposals = [x.domain for (y, x) in self.intertrails]
