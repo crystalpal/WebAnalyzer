@@ -17,6 +17,21 @@ try {
 
   var url = window.location.href;
 
+  // Function to reduce the site website to something that fiits in the
+  // suggestion box
+  var streamHandler_ParseName = function(name, maxlength) {
+      if(typeof maxlength == 'undefined') maxlength = 25;
+      var name = name.replace("http://", "")
+                       .replace("https://", "")
+                       .replace("www.", "");
+      if(name.length > maxlength) name = name.split("#")[0];
+      if(name.length > maxlength) name = name.split("?")[0];
+      while(name.contains('/') && name.length > maxlength) {
+          name = name.substring(0, name.lastIndexOf('/'));
+      }
+      return name;
+  }
+
   var send = function(data, onload) {
     data.ts = (new Date()).toISOString();
     data_string = JSON.stringify(data);
@@ -52,6 +67,34 @@ try {
           "action": "click",
           "target": href,
           "url": url,
+        }, function(response) {
+    try {
+      /* The initial load of a page will insert the suggestion box
+       * However, due to the increased use of JavaScript websites
+       * using frameworks like AngularJS etc, after the initial load
+       * future clicks will not result in a load event, meaning
+       * the suggestions on a JavaScript website would remain
+       * upon leaving that website (even if it stays open for hours)
+       *
+       * Our solution attempts to fix this issue also processing suggestions
+       * after a click event and updating the suggestion box rather than
+       * completely inserting.
+       */
+      console.log("Processing Click action");
+      data = JSON.parse(response.response);
+
+      var suggestions = "";
+      $.each(data.guesses, function(index, val) {
+        suggestions += '<li>';
+        suggestions +='<a href="'+val+'" title="Full link: '+val+'">&#9830; ';
+        suggestions += streamHandler_ParseName(val) + '</a></li>';
+      });
+      $("#ml_inner .suggestions").html('')
+      $("#ml_inner .suggestions").append(suggestions);
+
+    } catch (e) {
+      console.log('An error occured while processing the click update', e);
+    }
         });
       } catch (e) {
         console.log('An error occured in a click listener', e);
@@ -187,28 +230,31 @@ try {
     'margin-top:5px;width:250px;}');
     GM_addStyle('#ml_suggestionbox a {'+
     'color: #333;text-decoration: none;'+
+    '-webkit-transition: color .5s ease;'+
+    '-moz-transition: color .5s ease;'+
+    '-ms-transition: color .5s ease;'+
+    '-o-transition: color .5s ease;'+
+    'transition: color .5s ease;'+
     'width: 250px;padding: 3px 10px 3px 3px;}');
     GM_addStyle('#ml_suggestionbox .suggestions li a:hover,'+
     '#ml_suggestionbox .suggestions li a:active {'+
     'color: #888;border-bottom: 1px solid #888;text-decoration: none;}');
-    GM_addStyle('#ml_suggestionbox .title {'+
+    GM_addStyle('#ml_suggestionbox .title {width:200px;'+
     'padding: 15px;background-color: #343436;'+
     'font-size:15px; color: #e6e6e6;'+
     'font-family: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;}');
     GM_addStyle('#ml_suggestionbox .switcher-title {'+
     'font-size: 12px;font-family: Raleway, Arial, Helvetica, sans-serif;'+
-    'height: 38px;line-height: 38px;'+
+    'height: 38px;line-height: 38px;width:200px;'+
     'text-align: center;border-top: 1px solid #fff;}');
     GM_addStyle('#ml_suggestionbox .switch-button {'+
     'width: 40px;height: 38px;'+
     'line-height: 38px;color: #f5f5f5;'+
     'position: absolute;top: 49px;'+
     'left: -41px;background: #343436;'+
-    'cursor: pointer;font-size: 26px;'+
-    'text-align: center;'+
+    'cursor: pointer;font-size: 26px;text-align: center;'+
     'font-family:"Times New Roman";'+
-    'border: 1px solid #f5f5f5;text-decoration: none;'+
-    'display: block;border: 1px solid #f5f5f5;'+
+    'text-decoration: none;display: block;'+
     '-webkit-box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
     '-moz-box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
     'box-shadow: 0 2px 8px 2px rgba(0, 0, 0, .13);'+
@@ -235,12 +281,9 @@ try {
 
       var suggestions = "";
       $.each(data.guesses, function(index, val) {
-        var name = val.replace("http://", "")
-                         .replace("https://", "")
-                         .split('/')[0];
         suggestions += '<li>';
         suggestions +='<a href="'+val+'" title="Full link: '+val+'">&#9830; ';
-        suggestions += name + '</a></li>';
+        suggestions += streamHandler_ParseName(val) + '</a></li>';
       });
       $("#ml_inner").append('<ul class="suggestions">'+suggestions+'</ul>');
       $("#ml_inner").append('<div class="switcher-title">'+
@@ -270,6 +313,7 @@ try {
       console.log('An error occured while processing the guesses', e);
     }
   });
+
 } catch (e) {
   console.log('An error occured', e);
 }
