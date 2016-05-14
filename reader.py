@@ -179,8 +179,8 @@ class Proposer(object):
         """ Gathers site proposals based on time, popular domains and current
         click stream """
         print("Creating proposals")
-        dayproposals = self.propose_daytimes(action.timestamp, 15*60, 10)
-        weekproposals = self.propose_weektimes(action.timestamp, 3)
+        dayproposals = self.propose_daytimes(action.timestamp, 15*60)
+        weekproposals = self.propose_weektimes(action.timestamp)
         timeproposals = combine_timeproposals(dayproposals, weekproposals)
         paths = pd.Series()
         # trail = [[],0]
@@ -189,10 +189,10 @@ class Proposer(object):
         domainproposals = domain_suggestions(paths, self.urls)
         return combine_suggestions(action, timeproposals, domainproposals, self.urls, suggestion_amount)        
 
-    def suggest_start(self):
-        dayproposals = self.propose_daytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60, 10)
-        weekproposals = self.propose_weektimes(datetime.datetime.utcfromtimestamp(tm.time()), 3)
-        timeproposals = combine_timeproposals(dayproposals, weekproposals)
+    def suggest_start(self, amount):
+        dayproposals = self.propose_daytimes(datetime.datetime.utcfromtimestamp(tm.time()), 15*60)
+        weekproposals = self.propose_weektimes(datetime.datetime.utcfromtimestamp(tm.time()))
+        timeproposals = combine_timeproposals(dayproposals, weekproposals, amount)
         trailproposals = [x.domain for (y, x) in self.intertrails]
         proposals = []
         domainproposals = []
@@ -206,11 +206,28 @@ class Proposer(object):
             proposals.append(sortedprops[:2])
         return proposals
 
-    def propose_weektimes(self, timestamp, amount):
-        return self.weekdays[datetime.datetime.utcfromtimestamp(timestamp).weekday()][:amount]
+    def propose_weektimes(self, timestamp):  
+        weekday = datetime.datetime.utcfromtimestamp(timestamp).weekday()
+        otherdays = pd.Series()
+        for day in [x for x in range(7) if x != weekday]:
+            otherdays.add(self.weekdays(day))
+        thisday = self.weekdays(weekday)
+        possibledomains = pd.Series()
+        for domain in otherdays.keys():
+            if domain in thisday.keys() and thisday[domain] > otherdays[domain]*3/5/7:
+                possibledomains.set_value(domain, thisday[domain])   
+        return possibledomains
 
-    def propose_daytimes(self, timestamp, r, amount):
-        return self.daytime.getrange(timestamp, r)[:amount]
+    def propose_daytimes(self, timestamp, r):
+        before = self.daytime.getrangearound(timestamp-2*r, r)
+        after = self.daytime.getrangearound(timestamp+2*r, r)
+        before.add(after)
+        current = self.daytime.getrangearound(timestamp, r)
+        possibledomains = pd.Series()
+        for domain in current.keys():
+            if domain in before.keys() and current[domain] > before[domain]*3/5:
+                possibledomains.set_value(domain, current[domain])
+        return possibledomains 
 
 
 '''

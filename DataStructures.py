@@ -65,7 +65,7 @@ class CircularList():
             self.items[x] = []
         self.items[x].append(domain)
 
-    def getrange(self, timestamp, seconds):
+    def getrangearound(self, timestamp, seconds):
         """ Suggest domains at the given timestamp within a given deviation
         based on their occurence count """
         start = gettimeofday(timestamp - seconds)
@@ -84,3 +84,5 @@ class CircularList():
         # Sort all domains based on their occurence count
         alldomains = alldomains.sort_values(ascending=False)
         return alldomains
+
+            
