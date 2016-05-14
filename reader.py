@@ -12,7 +12,7 @@ import pandas as pd
 import os
 from datastructures import Action, Domain, CircularList
 from utilities import combine_timeproposals, domain_suggestions, combine_suggestions, parse_timestamp
-from traverse import breathtraverse
+from Traverse import breathtraverse
 
 
 class Proposer(object):
@@ -78,6 +78,15 @@ class Proposer(object):
         """ Gives N suggestions from a comma seperated inputline """
         row = self.clean_file_row(inputline).split(',')
         act = row[1]
+        
+        if act == "load" and not file_action and self.lastnode.link is not None:
+            if not self.lastnode.link == row[2]:
+                row[1] == "click"
+                act = "click"
+                row[3] = row[2]
+                row[2] = self.lastnode.link
+                print("Generated click",row[2], "->", row[3], sep=" ")
+        
         # If a load action, return suggestions
         if act == "load":
             domain = self.get_domain(row[2])
