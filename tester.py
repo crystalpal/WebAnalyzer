@@ -34,7 +34,11 @@ def readpath(path, output, outputtype):
             datacut = round(len(allrows)/100*80)
             proposer = Proposer(path, False)
             for row in allrows[:datacut]:
+                try:
                     proposer.parse_action(row)
+                except:
+                    print(file)
+                    sys.exit()
             totalscore = 0
             for rowindex in range(0, len(allrows[datacut:])-1):
                 proposals = proposer.parse_action(allrows[rowindex], False, 5)
@@ -61,7 +65,7 @@ def test_together():
 
 def test_seperately():
     users = []
-    for i in range(1, 5):
+    for i in range(1, 28):
         users.append("u"+str(i))
     for user in users:
         readpath('./testdata/'+user, './results/seperate.txt', 'a')

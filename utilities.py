@@ -51,8 +51,6 @@ def domain_suggestions(paths, urls):
             domainsuggestions[urls[index].domain.dom].append(index)
         else:
             domainsuggestions[urls[index].domain.dom] = [index]
-    print("Domainsuggestions:")
-    print(domainsuggestions)
     return domainsuggestions
 
 
@@ -76,27 +74,29 @@ def combine_suggestionstime(timeproposals, domainsuggestions):
     return suggestions
 
 
-def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount):
+def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount):    
+    print("Domainsuggestions:")
+    print(domainsuggestions)
+    print("Timesuggestions:")
+    print(timeproposals)
     suggestions = []
     
-    for domain in domainsuggestions.keys()[:1]:
-        for d in domainsuggestions[domain][:1]:
-            if d not in suggestions:
-                suggestions.append(d)
-    print("suggestions")
-    print(suggestions)
-    for domain in domainsuggestions.keys()[1:4]:
+    for domain in domainsuggestions.keys()[1:3]:
         for d in domainsuggestions[domain][:1]:
             if d not in suggestions:
                 suggestions.append(d)
     print("suggestions")
     print(suggestions)
     domains = [x for x in timeproposals.keys() if x not in suggestions]
+    counter = 0
     for domain in domains:
         if domain in domainsuggestions.keys():
             for d in domainsuggestions[domain][:1]:
                 if d not in suggestions:
                     suggestions.append(d)
+                    counter +=1
+                    if counter == 2:
+                        break
                     #return suggestions
     print("suggestions")
     print(suggestions)
@@ -128,7 +128,7 @@ def combine_timeproposals(dayproposals, weekproposals):
     for daydomain in dayproposals.keys():
         if daydomain in weekproposals.keys():
             # divide by 7 & 8, reducing the influence a single outburst has
-            count = dayproposals[daydomain]/7 + weekproposals[daydomain]/8
+            count = dayproposals[daydomain] + weekproposals[daydomain]
             timeproposals[daydomain] = count
         else:
             timeproposals[daydomain] = dayproposals[daydomain]
@@ -138,6 +138,4 @@ def combine_timeproposals(dayproposals, weekproposals):
     else:
         avgscore = 0
     timeproposals = pd.Series({proposal:timeproposals[proposal] for proposal in timeproposals.keys() if timeproposals[proposal] > avgscore})
-    print("timeproposals")
-    print(timeproposals)
     return timeproposals.sort_values(ascending=False)
