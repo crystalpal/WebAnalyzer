@@ -12,10 +12,13 @@ def readpath(path, output, outputtype):
             userfiles[user] = []
         userfiles[user].append(file)
         userfiles.sort_values(inplace=True)
+    avg_recall = []
+    avg_precision = []
     with open(output, outputtype) as f:
         for user in userfiles.keys():
             if len(userfiles[user]) == 0:
                 continue
+            # Make an array with all the click actions of one user
             allrows = []
             for file in userfiles[user]:
                 try:
@@ -39,16 +42,32 @@ def readpath(path, output, outputtype):
                     print(file)
             # Use the last 20% of data to score the results based on the given
             # predictions towards the actual next website
+            recall = 0.0  # relevant retrieved / relevant
+            precision = 0.0  # relevant retrieved / retrieved
             totalscore = 0
-            for rowindex in range(0, len(allrows[datacut:])-1):
+            for rowindex in range(0, len(allrows[datacut:])-4):
                 proposals = proposer.parse_action(allrows[rowindex], False, 5)
                 if proposals is not None:
                     for i in range(0, len(proposals)):
-                        if proposals[i] == allrows[rowindex+1].split(',')[3]:
+                        if proposals[i] in [allrows[rowindex+1].split(',')[3],
+                                     allrows[rowindex+2].split(',')[3],
+                                     allrows[rowindex+3].split(',')[3]]:
+                            recall += 1 
+                            precision += 1.0/(i+1)
                             totalscore += (len(proposals) - i)
                             break
-            totalscore /= (len(allrows) - datacut)
-            f.write(user + " " + str(totalscore) + " " + str(len(allrows[datacut:])-1) + "\n" )     
+            totalscore /= (len(allrows) - datacut-3)
+            recall /= (len(allrows) - datacut-3)
+            precision /= (len(allrows) - datacut-3)
+            avg_recall.append(recall)
+            avg_precision.append(precision)
+            f.write(user + " " + str(totalscore) + " " + 
+                    str(recall) + " " + str(precision) + " " + 
+                    str(len(allrows[datacut:])-1) + "\n" )
+    print(avg_recall)
+    print("AVG recall:", (sum(avg_recall) / len(avg_recall)))
+    print(avg_precision)
+    print("AVG precision:", (sum(avg_precision) / len(avg_precision)))
 
 
 def clean_file_row(input):
@@ -69,11 +88,11 @@ def test_seperately():
     """ This function will loop through the different users and test the
     correctness of the proposer """
     users = []
-    for i in range(1, 28):
+    for i in range(1, 5):
         users.append("u"+str(i))
     for user in users:
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
 
 
-test_together()  # Tests all files together
+#test_together()  # Tests all files together
 test_seperately()  # Test seperately per user
