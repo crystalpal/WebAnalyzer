@@ -1,61 +1,404 @@
-#ml_suggestionbox {
-  position:absolute;
-  bottom: 0;
-  right: 0;
-  width:230px;
-  height: 20px;
-  border:1px solid #ffffff;
-  background-color:#333;
-  padding: 15px 5px 10px 25px;
-  -moz-box-shadow:-8px 8px 20px -6px #000;
-  -webkit-box-shadow:-8px 8px 20px -6px #000;
-  box-shadow:-8px 8px 20px -6px #000;
-  -moz-border-radius-topleft: 25px;
-  -webkit-border-top-left-radius: 25px;
-  border-top-left-radius: 25px;
-  -webkit-transition: height .5s ease;
-  -moz-transition: height .5s ease;
-  -ms-transition: height .5s ease;
-  -o-transition: height .5s ease;
-  transition: height .5s ease;
+/********************************************************
+*  Stylesheet voor javaproject 2012-2013        	*
+*  Design door Vincent Tanghe - 2Ti2                    *
+*                                                       *
+********************************************************/
+
+/* ------- Algemene instellingen ------- */
+html{
+    height: 100%;
+    font-family: 'Open Sans', Segoe UI light, Tahoma,Helvetica,sans-serif;
+    font-weight:400;
+    font-family:'Open Sans', Segoe UI light, Tahoma,Helvetica,sans-serif;
+    font-size:13px;
 }
-#ml_suggestionbox:hover{
- height: 150px;
+body{
+    height:100%;
+    background-color: #ddd;
+    overflow: auto;
+    text-align: left;
+    color: #333;
+    cursor: default;
+    margin: 0;
+    padding: 0;
+    text-align: center;
 }
-#ml_suggestionbox.expanded {
- height: 150px;
+#content,#header{
+    text-align: left;
+    width: 700px;
+    margin: 0 auto;
 }
-#ml_suggestionbox h3{
-  color: #f5f5f5;
-  margin:0px;
+wrapper{
+    position:relative;
+    z-index:0;
+    margin:0 0 0 20px;
 }
 
-#ml_suggestionbox .suggestions {
-  display: none;
-  color: #eee;
-  list-style: disc;
-  margin-left: 15px;
-  padding: 8px;
-  position: relative;
-  -webkit-transition: display .5s ease;
-  -moz-transition: display .5s ease;
-  -ms-transition: display .5s ease;
-  -o-transition: display .5s ease;
-  transition: display .5s ease;
+/* ------- Header stijlen ------- */
+#headerwrapper{
+    background-color: #333; 
+    border-bottom:1px #999 solid;
+    width: 100%;
 }
-#ml_suggestionbox.expanded .suggestions,
-#ml_suggestionbox.popup .suggestions{
-  display: block;
+#header{
+    background-color: #333;
+    color: #FFF;
+    display: table;
 }
-#ml_suggestionbox a,
-#ml_suggestionbox a:link,
-#ml_suggestionbox a:vistited {
-  color: #eee !important;
-  text-decoration: none !important;
+
+div#header h1{/*the big header text */
+    color:#FFF;
+    font-size:46px;
+    text-decoration:none;
+    margin:0px;
 }
-#ml_suggestionbox a:hover,
-#ml_suggestionbox a:active {
-  color: #f5f5ff;
-  border-bottom: 1px solid #ffffff;
-  text-decoration: none;
+div#header h2{/*the smaller title */
+    z-index:12;
+    font-size:16px;
+    color:#CCC;
+    margin:0 0 5px 5px;
+}
+#headerTitles {
+    position:relative;
+    float:left;
+    display:inline-block;
+}
+#headnav {
+    z-index:1;
+    float:right;
+    vertical-align:middle;
+    margin-top:10px;
+}
+
+.headnavitem {
+    display:inline-block;
+    z-index:6;
+    -webkit-transition:background 100ms ease-in;
+    -moz-transition:background 100ms ease-in;
+    -o-transition:background 100ms ease-in;
+    -ms-transition:background 100ms ease-in;
+    transition:background 100ms ease-in;
+    height:70px;
+    width:95px;
+    background-color:#555;
+    color:#FFF;
+    font-size:14px;
+    text-align:center;
+    border:1px solid #666;
+    text-decoration:none;
+    margin:0;
+    padding:0;
+    text-transform:uppercase;
+}
+
+.headnavitem img {
+    border:none;
+    height:32px;
+    margin:10px 10px 3px;
+}
+
+
+/* ------- Content stijlen ------- */
+#content{
+    margin-top: 20px;
+    color:#111;
+    display: table;
+}
+
+#headerWrapper{/* the header on top */
+    background-color:#333;
+    border-bottom:1px #999 solid;	
+    /*box-shadow:0 0 5px #555;*/
+}
+div.pageContent{
+    background: rgb(250, 250, 250); /* default fallback */
+    /*background: rgba(180, 180, 180, 0.2); /* nice browsers */
+    box-shadow: 0 0 7px #777;
+    -moz-box-shadow: 0 0 7px #777;
+    -webkit-box-shadow: 0 0 7px #777;
+    padding: 5px;
+    min-height: 400px;
+}
+
+#back{
+    width:75px;
+    margin-top: 50px;
+    margin-left:-100px;
+    display:block;
+    float:left;
+}
+#back a img{
+    zoom: 1;
+    opacity: 0.4;
+    filter: alpha(opacity=40);
+    border: 0px;
+}
+#back a img:hover{
+    opacity: 1;
+    filter: alpha(opacity=100);
+}
+
+/* -- Extra stijl instellingen -- */
+a{
+    color: #296ACC; 
+    text-decoration:underline;
+    outline: none;
+}
+a:hover{
+    color: #ffffff;
+}
+a:active, a:selected, a:visited, a:focus {
+    outline: none;
+    border:none;
+}
+em{
+    margin-right:2px;
+}
+/* HEADINGS */
+h1{
+    font-size:38px;
+    font-weight:300;
+    margin:20px 0 0px 0;
+    color:#222;
+}
+h2{
+    font-size:30px;
+    font-weight:300;
+    margin:20px 0 2px 0;
+    color:#222;
+}
+h3{
+    font-size:22px;
+    font-weight:normal;
+    margin:20px 0 2px 0;
+    color:#444;
+}
+h4{
+    font-size:20px;
+    font-weight:300;
+    margin:15px 0 2px 0;
+    color:#444;
+}
+h5{
+    font-size:18px;
+    font-weight:normal;
+    margin:13px 0 2px 0;
+    color:#444;
+}
+h6{
+    font-size:16px;
+    font-weight:normal;
+    margin:10px 0 2px 0;
+    color:#444;
+}
+/* Block Alignment*/
+.align-left{
+    display: block;
+    float: left;
+    text-align:left;
+}
+.align-right{
+    display: block;
+    float: right;
+    text-align:right;
+}
+.align-center{
+    display: block;
+    text-align:center;
+    margin: auto;
+}
+
+/* NAVIGATION */
+a.headnavitem{ /* main nav on top */
+    height:70px;
+    width:95px;
+    background-color:#555;
+    color:#FFF;
+    font-size:14px;
+    text-align:center;	
+    border:1px solid #666;
+    text-decoration:none;
+}
+a.headnavitem:hover{
+    color:#FFF;
+    background-color:#888;
+}
+a.headnavitem img{
+    margin:10px 10px 3px 10px;
+    height:32px;
+}
+
+/* -- Forms -- */
+form{
+    margin-left: 10px;
+}
+fieldset{
+    border:1px solid #999;
+    margin: 10px 0;
+    padding:10px;
+}
+legend{
+    background-color:#777;
+    color:#FFF;
+    font-weight:bold;
+    padding:1px 3px;
+    font-size:12px;
+}
+label{
+    cursor:pointer;
+}
+textarea{
+    font-family:  'Open Sans', Segoe UI, Tahoma,Helvetica,sans-serif;
+    overflow:auto;
+}
+input,select,textarea{
+    margin:3px 3px 3px 10px;
+    padding:2px 2px;
+}
+select{
+    width: 200px;
+    padding:3px 3px;
+}
+#zoeken{
+    background: #fff url('img/zoeken.png') center right no-repeat;
+    margin: 0px;
+}
+input[type=button]{
+    background-color:#777;
+    border:1px solid #FFF;
+    color:#FFF;
+    padding:2px 5px;
+}
+input[type=button]:hover{
+    background-color:#999;	
+}
+textarea:focus,input:focus,select:focus {
+  outline: 0;
+  border: 1px solid rgba(82, 168, 236, 0.8);
+  outline: thin dotted \9;
+  /* IE6-9 */
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+          box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+            position: relative;
+   padding:3px 3px;
+}
+
+input.errorfield,textarea.errorfield {background-color:#FEECEC;border: 1px solid #D01515; padding:2px 2px;}
+/* BUTTONS */
+.orangeButton, button{
+    border:1px solid #FFF;
+    background-color:#F60;
+    color: #FFF;
+    padding:2px 5px;
+    margin: 5px 3px 3px 3px;
+    cursor: pointer;
+}
+.orangeButton:hover, button:hover{background-color:#F90;cursor:pointer;}
+.greenButton{background-color:#789600;}
+.greenButton:hover{background-color:#88B600;}
+.redButton{background-color:#C33;}
+.redButton:hover{background-color:#D63;}
+.blueButton{background-color:#426EA0;}
+.blueButton:hover{background-color:#688BB3;}
+.greyButton{background-color:#444;}
+.greyButton:hover{background-color:#888;}
+
+.w8bbig, .w8bsmall{
+    color: #FFF;
+    padding:2px 5px;
+    margin: 5px 5px 3px 3px;
+    cursor: pointer;
+    display: block;
+    float: left;
+    text-decoration: none;
+    border: 1px solid transparent;
+    -webkit-transition:background 100ms ease-in;
+    -moz-transition:background 100ms ease-in;
+    -o-transition:background 100ms ease-in;
+    -ms-transition:background 100ms ease-in;
+    transition:background 100ms ease-in;
+}
+.w8bbig:hover, .w8bsmall:hover{
+    box-shadow: 0 0 7px #777;
+    -moz-box-shadow: 0 0 7px #777;
+    -webkit-box-shadow: 0 0 7px #777;
+    border: 1px solid #fff;
+}
+.w8bbig h2, .w8bsmall h2{
+    color: #fff;
+    text-decoration: none;
+    text-transform:uppercase;
+}
+.w8bbig{
+    width: 300px;
+    height: 145px;
+}
+.w8bsmall{
+    width: 145px; 
+    height: 145px; 
+}
+/* HR */
+hr{
+    border:none;
+    border-top:1px solid #555;
+    margin-bottom:15px;
+    margin-top:2px;
+}
+
+/* -- bericht blokken -- */
+.box-info,.box-warning,.box-success,.box-hint { margin: 15px 0;text-align: justify;padding: 10px 10px 10px 40px;color:#FFF; border-color: #fae6be;background: #F70;}
+.box-info { background:#296ACC url(img/info.png) 0 0 no-repeat; border-color:#B2B2FF; }
+.box-warning { background:#C33 url(img/warning.png) 5px 5px no-repeat;border-color:#DB4D4D; }
+.box-success { background:#789600 url(img/warning.png) 5px 5px no-repeat;border-color: #88B600; }
+
+table.tablesorter{
+    border-spacing: 0px;
+    margin:10px 0pt 15px 0px;
+    width: 100%;
+    background: #fff;
+    text-align: left;
+    border-collapse: collapse;
+    border: 1px solid #bbb;
+}
+
+table.tablesorter thead tr th, table.tablesorter tfoot tr th {
+    font-weight: bold;
+    color: #fff;
+    background-color: #296ACC;
+    border-bottom: 1px solid #bbb;
+    padding: 4px 20px 4px 4px;
+}
+
+table.tablesorter thead tr .header {
+    background-image: url(img/bg.gif);
+    background-repeat: no-repeat;
+    background-position: center right;
+    cursor: pointer;
+}
+table.tablesorter thead tr .clear{
+    background-image:none;
+    cursor: default;
+} 
+table.tablesorter tbody td {
+    color: #3D3D3D;
+    padding: 4px;
+    /*background-color: #FFF;*/
+    vertical-align: top;
+    border-bottom: 1px solid #bbb;
+}
+table.tablesorter tbody tr{
+    background-color:#FFF;
+}
+table.tablesorter tbody tr.odd{
+    background-color: #ddd;
+}
+table.tablesorter thead tr .headerSortUp {
+    background-image: url(img/asc.gif);
+}
+table.tablesorter thead tr .headerSortDown {
+    background-image: url(img/desc.gif);
+}
+blockquote{
+    margin: 10px;
 }

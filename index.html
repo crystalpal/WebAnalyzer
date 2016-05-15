@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="style.css"/>
+    <link href="img/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <title>Webanalyser</title>
+    <script>
+    function remove_folder() {
+        data = {"ts": "time",
+          "action": "remove",
+          "target": "http://localhost:8000/",
+          "url": "http://localhost:8000/"}
+        var xmlhttp=new XMLHttpRequest();
+        data_string = JSON.stringify(data);
+        xmlhttp.open("POST", 'http://localhost:8000');
+        xmlhttp.setRequestHeader("Content-type", "application/json");
+        xmlhttp.send(data_string);
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                if(xmlhttp.status == 200){
+                    console.log('Response: ' + xmlhttp.responseText );
+                    document.getElementById("success").style.display="block";
+                    setTimeout(function(){ 
+                        document.getElementById("success").style.display="none"; 
+                    }, 3000);
+                }else{
+                    console.log('Error: ' + xmlhttp.statusText )
+                }
+            }
+        }
+        xmlhttp.send(data);
+    }
+    </script>
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <!-- Header -->
+      <div id="headerwrapper">
+        <div id="header">
+          <div id="headerTitles">
+            <h1>Webanalyser</h1>
+            <h2>By Joren Verspeelt &amp; Vincent Tanghe</h2>
+          </div>
+          <div id="headnav">
+            <!--<a class="headnavitem"  href="#">
+              home
+            </a>-->
+            <div>
+              <script>var today = new Date();
+                var dd=today.getDate(), mm=today.getMonth()+1,/*January is 0!*/ 
+                yyyy=today.getFullYear();
+                if(dd<10){dd='0'+dd} if(mm<10){mm='0'+mm} 
+                document.write(dd+'/'+mm+'/'+yyyy);
+              </script>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Content -->
+      <div id="content">
+        <div class="pageContent" style="float:right;width:690px;"> 
+          <h2>Settings</h2>
+          <hr/>
+          <blockquote>
+            <p class="box-info" id="info" style="display:none;"></p>
+            <p class="box-warning" id="error" style="display:none;"></p>
+            <p class="box-success" id="success" style="display:none;">All history files have been removed</p>
+
+            <button class="blueButton w8bsmall" onclick="javascript:location='data/u1_1.csv'">
+                Download current data (csv)
+            </button>
+            <button class="greenButton w8bsmall">Upload old data (csv)</button>
+            <button class="redButton w8bsmall" onclick="javascript:remove_folder()">
+                Reset history
+                <i>Warning: This will remove the history from your harddisk</i>
+            </button>
+               
+              
+            <!-- Home content -->
+            <div id="content" style="width: 500px;">
+              <!--
+              <br/>
+              
+              <br/>
+              &#9830; Other settings
+              -->
+            </div>
+          </blockquote>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
