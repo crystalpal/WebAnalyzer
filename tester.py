@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 from reader import Proposer
-import sys
 import pandas as pd
 
 
@@ -38,12 +37,8 @@ def readpath(path, output, outputtype):
                     proposer.parse_action(row)
                 except:
                     print(file)
-<<<<<<< HEAD
-=======
-                    sys.exit()
             # Use the last 20% of data to score the results based on the given
             # predictions towards the actual next website
->>>>>>> origin/master
             totalscore = 0
             for rowindex in range(0, len(allrows[datacut:])-1):
                 proposals = proposer.parse_action(allrows[rowindex], False, 5)

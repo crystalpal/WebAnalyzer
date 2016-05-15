@@ -3,16 +3,20 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <link href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600" rel="stylesheet" type="text/css">
+    <link href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600"
+     rel="stylesheet" type="text/css">
     <link rel="stylesheet" type="text/css" href="style.css"/>
     <link href="img/favicon.ico" rel="shortcut icon" type="image/x-icon" />
     <title>Webanalyser</title>
     <script>
-    function remove_folder() {
-        data = {"ts": "time",
-          "action": "remove",
-          "target": "http://localhost:8000/",
-          "url": "http://localhost:8000/"}
+    function show_feedback(type, text) {
+        document.getElementById(type).innerHTML = text;
+        document.getElementById(type).style.display="block";
+        setTimeout(function(){ 
+            document.getElementById(type).style.display="none"; 
+        }, 4000);
+    }
+    function post_sent(data, success, failure) {
         var xmlhttp=new XMLHttpRequest();
         data_string = JSON.stringify(data);
         xmlhttp.open("POST", 'http://localhost:8000');
@@ -22,16 +26,39 @@
             if (xmlhttp.readyState == XMLHttpRequest.DONE) {
                 if(xmlhttp.status == 200){
                     console.log('Response: ' + xmlhttp.responseText );
-                    document.getElementById("success").style.display="block";
-                    setTimeout(function(){ 
-                        document.getElementById("success").style.display="none"; 
-                    }, 3000);
+                    show_feedback("success", success);
                 }else{
-                    console.log('Error: ' + xmlhttp.statusText )
+                    console.log('Error: ' + xmlhttp.statusText );
+                    show_feedback("error", failure);
                 }
             }
         }
         xmlhttp.send(data);
+    }
+    function remove_folder() {
+        data = {"ts": "time",
+          "action": "remove",
+          "target": "http://localhost:8000/",
+          "url": "http://localhost:8000/"}
+        post_sent(data, "All history files have been removed!",
+                "Something went wrong, please try again.");
+    }
+    function upload_folder() {
+        var path = prompt("Please enter the path to the file or directory you "+
+                        "wish to upload. (only csv format will be accepted)", "");
+        path = path.trim()
+        if(path == "")
+            show_feedback("error", "The path can not be empty");
+        else
+            path = path.split('\\').join('/');
+            data = {"ts": path,
+                "action": "upload",
+                "target": "http://localhost:8000/",
+                "url": "http://localhost:8000/"}
+            console.log(path);
+            post_sent(data, "The file(s) has/have been uploaded",
+                "Something went wrong, please check the path.");
+            
     }
     </script>
   </head>
@@ -70,12 +97,14 @@
           <blockquote>
             <p class="box-info" id="info" style="display:none;"></p>
             <p class="box-warning" id="error" style="display:none;"></p>
-            <p class="box-success" id="success" style="display:none;">All history files have been removed</p>
+            <p class="box-success" id="success" style="display:none;"></p>
 
-            <button class="blueButton w8bsmall" onclick="javascript:location='data/u1_1.csv'">
+            <button class="blueButton w8bsmall" onclick="javascript:location='data/'">
                 Download current data (csv)
             </button>
-            <button class="greenButton w8bsmall">Upload old data (csv)</button>
+            <button class="greenButton w8bsmall" onclick="javascript:upload_folder()">
+                Upload old data (csv)
+            </button>
             <button class="redButton w8bsmall" onclick="javascript:remove_folder()">
                 Reset history
                 <i>Warning: This will remove the history from your harddisk</i>

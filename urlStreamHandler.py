@@ -15,6 +15,7 @@ import datetime
 import atexit
 import signal
 import time
+import shutil
 from reader import Proposer
 
 start_time = time.time()
@@ -49,7 +50,7 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
         action = data['action']
         # If a request from the settings page, handle separately
         if "localhost:8000" in url:
-            response = settings_handler(action)
+            response = settings_handler(action, ts)
         else:
             if action == 'load':
                 toppage = data['top']
@@ -99,19 +100,36 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(jsonstr)
 
-def settings_handler(action):
+def settings_handler(action, data):
+    global proposer
+    global logfile
     if action == 'remove':
         folder = "./data"
         print("Resetting all logs")
-        global logfile
         logfile.close()
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
             os.unlink(file_path)
         logfile = open(filename, "w")
-        global proposer
         proposer = Proposer("./data")
         return {'success': True}
+    elif action == 'upload':
+        # Note: This is not a secure solution, but more a proof of concept
+        if os.path.isdir(data):
+            files = os.listdir(data)
+            for file_name in files:
+                file = os.path.join(data, file_name)
+                if os.path.isfile(file) and file.endswith('.csv'):
+                    shutil.copy2(file, './data')
+            proposer = Proposer("./data")
+            return {'success': True}
+        elif data.endswith('.csv'):
+            shutil.copy2(data, './data')
+            proposer = Proposer("./data")
+            return {'success': True}
+        else:
+            return {'success': False}
+        
     
 def start_from_csv(filenames):
     """List of csv files that contain a url stream as if they were comming
