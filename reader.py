@@ -198,7 +198,6 @@ class Proposer(object):
         # trail = [[],0]
         breathtraverse(self.F, [(action.link, 0)], [], paths, 5, 20)
         paths = paths.sort_values(ascending=False)
-        print(paths)
         domainproposals = domain_suggestions(paths, self.urls)
         suggestions = combine_suggestions(action, timeproposals, domainproposals, self.urls, suggestion_amount)   
         #sys.exit()

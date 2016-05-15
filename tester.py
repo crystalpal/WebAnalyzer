@@ -38,7 +38,6 @@ def readpath(path, output, outputtype):
                     proposer.parse_action(row)
                 except:
                     print(file)
-                    sys.exit()
             totalscore = 0
             for rowindex in range(0, len(allrows[datacut:])-1):
                 proposals = proposer.parse_action(allrows[rowindex], False, 5)
