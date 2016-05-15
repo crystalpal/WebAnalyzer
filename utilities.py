@@ -97,18 +97,18 @@ def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount)
             for d in domainsuggestions[domain][:1]:
                 if d not in suggestions:
                     suggestions.append(d)
-                    counter +=1
+                    counter += 1
                     if counter == 2:
                         break
-                    #return suggestions
+    # return suggestions
     print("2suggestions")
     print(suggestions)
     length = 0
     cur = len(suggestions)
-    if amount > cur:               
+    if amount > cur:
         if amount - cur < len(current.domain.urls):
             length = amount - len(suggestions)
-        else: 
+        else:
             length = len(current.domain.urls)
     if len(suggestions) < amount:
         for i in range(0, length):
@@ -127,18 +127,19 @@ def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount)
 
 
 def combine_timeproposals(dayproposals, weekproposals):
-    timeproposals = pd.Series()
+    tps = pd.Series()  # timeproposals
     for daydomain in dayproposals.keys():
         if daydomain in weekproposals.keys():
             # divide by 7 & 8, reducing the influence a single outburst has
             count = dayproposals[daydomain] + weekproposals[daydomain]
-            timeproposals[daydomain] = count
+            tps[daydomain] = count
         else:
-            timeproposals[daydomain] = dayproposals[daydomain]
+            tps[daydomain] = dayproposals[daydomain]
     # calculate belief of timeproposals
-    if(len(timeproposals) > 0):
-        avgscore = float(sum(timeproposals.values)/len(timeproposals.values)) - 1/len(timeproposals.values)
+    if(len(tps) > 0):
+        prop_amount = len(tps.values)
+        avgscore = float(sum(tps.values)/prop_amount) - 1/prop_amount
     else:
         avgscore = 0
-    timeproposals = pd.Series({proposal:timeproposals[proposal] for proposal in timeproposals.keys() if timeproposals[proposal] > avgscore})
-    return timeproposals.sort_values(ascending=False)
+    tps = pd.Series({p: tps[p] for p in tps.keys() if tps[p] > avgscore})
+    return tps.sort_values(ascending=False)

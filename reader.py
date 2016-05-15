@@ -10,10 +10,11 @@ import time as tm
 import datetime
 import pandas as pd
 import os
-from datastructures import Action, Domain, CircularList
-from utilities import combine_timeproposals, domain_suggestions, combine_suggestions, parse_timestamp
-from Traverse import breathtraverse
 import sys
+from datastructures import Action, Domain, CircularList
+from utilities import combine_timeproposals, domain_suggestions
+from utilities import combine_suggestions, parse_timestamp
+from Traverse import breathtraverse
 
 
 class Proposer(object):
@@ -159,7 +160,8 @@ class Proposer(object):
         return domain
 
     def insert_action(self, url_graph, domain_graph, action, file_action=False):
-        # check how far the last unloaded page was in the past, and start a new trail if necessary
+        # check how far the last unloaded page was in the past
+        # and start a new trail if necessary
         if action.timestamp - self.lastnode.timestamp > 60*60:  # 1 hr in sec
             self.trails.append([])
             self.intertrails.append((self.lastnode, action))
@@ -198,14 +200,21 @@ class Proposer(object):
         breathtraverse(self.F, [(action.link, 0)], [], paths, 5, 20)
         paths = paths.sort_values(ascending=False)
         domainproposals = domain_suggestions(paths, self.urls)
-        suggestions = combine_suggestions(action, timeproposals, domainproposals, self.urls, suggestion_amount)   
-        #sys.exit()
-        return suggestions  
+        suggestions = combine_suggestions(action,
+                                          timeproposals,
+                                          domainproposals,
+                                          self.urls,
+                                          suggestion_amount)
+        # sys.exit()
+        return suggestions
 
     def suggest_start(self, amount):
-        dayproposals = self.propose_daytimes(datetime.datetime.utcfromtimestamp(tm.time()), 25*60)
-        weekproposals = self.propose_weektimes(datetime.datetime.utcfromtimestamp(tm.time()))
-        timeproposals = combine_timeproposals(dayproposals, weekproposals, amount)
+        utc_timestamp = datetime.datetime.utcfromtimestamp(tm.time())
+        dayproposals = self.propose_daytimes(utc_timestamp, 25*60)
+        weekproposals = self.propose_weektimes(utc_timestamp)
+        timeproposals = combine_timeproposals(dayproposals,
+                                              weekproposals,
+                                              amount)
         trailproposals = [x.domain for (y, x) in self.intertrails]
         proposals = []
         domainproposals = []
@@ -213,13 +222,13 @@ class Proposer(object):
             if timeproposal in trailproposals:
                 domainproposals.append(timeproposal)
         for domain in domainproposals[:2]:
-            domainlinks = [y.link for (y, x) in self.intertrails if x == domain]
-            linkproposals = [(link, sum(self.F.edges(link)['weight'])) for link in domainlinks]
+            dl = [y.link for (y, x) in self.intertrails if x == domain]
+            linkproposals = [(l, sum(self.F.edges(l)['weight'])) for l in dl]
             sortedprops = linkproposals.sort(key=lambda tup: tup[1])
             proposals.append(sortedprops[:2])
         return proposals
 
-    def propose_weektimes(self, timestamp):  
+    def propose_weektimes(self, timestamp):
         weekday = datetime.datetime.utcfromtimestamp(timestamp).weekday()
         otherdays = pd.Series()
         for day in [x for x in range(7) if x != weekday]:
@@ -228,7 +237,7 @@ class Proposer(object):
         possibledomains = pd.Series()
         for domain in otherdays.keys():
             if domain in thisday.keys() and thisday[domain] > otherdays[domain]*3/5/7:
-                possibledomains.set_value(domain, thisday[domain])   
+                possibledomains.set_value(domain, thisday[domain])
         return possibledomains
 
     def propose_daytimes(self, timestamp, r):
