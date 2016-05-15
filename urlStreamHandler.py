@@ -13,9 +13,12 @@ import socketserver
 import datetime
 import atexit
 import signal
+import time
 from reader import Proposer
 
+start_time = time.time()
 proposer = Proposer("./data")
+print("Initialised in %s seconds" % (time.time() - start_time))
 date = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 filename = "urls_{}.csv".format(date)
 logfile = open(filename, "w")
@@ -62,9 +65,12 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
             print('{:<15}: {}'.format(action_str, url))
         inp = ts + ", " + action_str + ", " + url + ", " + target
         print(inp, file=logfile)
+        start_time = time.time()
         suggestions = proposer.parse_action(inp)
+        end_time = time.time() - start_time
         print("SUGGESTIONS")
         print(suggestions)
+        print("Suggestions in %s seconds" % (end_time))
         if suggestions is not None and len(suggestions) > 0:
             response = {
                 'success': True,
@@ -96,7 +102,7 @@ def start_from_csv(filenames):
             print('Processing {}'.format(csv_file))
 
 
-def main(argv=None):
+def main(argv=None):    
     parser = argparse.ArgumentParser(description='Record and suggest urls')
     parser.add_argument('--verbose', '-v', action='count',
                         help='Verbose output')

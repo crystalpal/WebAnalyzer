@@ -57,7 +57,6 @@ def domain_suggestions(paths, urls):
 def combine_suggestionstime(timeproposals, domainsuggestions):
     suggestions = []
     fill = 4 - len(timeproposals)
-    print(fill)
     for domain in timeproposals.keys()[:2]:
         if domain in domainsuggestions.keys():
             for d in domainsuggestions[domain][:2]:
@@ -85,7 +84,7 @@ def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount)
         for d in domainsuggestions[domain][:1]:
             if d not in suggestions:
                 suggestions.append(d)
-    print("suggestions")
+    print("1suggestions")
     print(suggestions)
     domains = [x for x in timeproposals.keys() if x not in suggestions]
     counter = 0
@@ -98,7 +97,7 @@ def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount)
                     if counter == 2:
                         break
                     #return suggestions
-    print("suggestions")
+    print("2suggestions")
     print(suggestions)
     length = 0
     cur = len(suggestions)
@@ -118,7 +117,7 @@ def combine_suggestions(current, timeproposals, domainsuggestions, urls, amount)
                     suggestions.append(d)
                     if len(suggestions) == amount:
                         return suggestions
-    print("suggestions")
+    print("3suggestions")
     print(suggestions)
     return suggestions
 
