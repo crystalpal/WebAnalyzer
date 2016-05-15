@@ -81,7 +81,7 @@ class Proposer(object):
         row = self.clean_file_row(inputline).split(',')
         act = row[1]
         
-        if act == "load" and not file_action and self.lastnode.link is not None:
+        if act=="load" and not file_action and self.lastnode.link is not None:
             if not self.lastnode.link == row[2]:
                 row[1] = "click"
                 act = "click"
@@ -140,13 +140,13 @@ class Proposer(object):
         # Add to a time-of-day list
         self.daytime.add(domain.dom, timestamp)
         # Add to a day-of-week list
-        weekday = tm.gmtime(timestamp).tm_wday
+        wd = tm.gmtime(timestamp).tm_wday
         val = 1
-        if domain in self.weekdays[weekday].keys():
-            val = self.weekdays[weekday].get_value(domain) + val
-        self.weekdays[weekday].set_value(domain, val)
+        if domain in self.weekdays[wd].keys():
+            val = self.weekdays[wd].get_value(domain) + val
+        self.weekdays[wd].set_value(domain, val)
         # Sort on occurence count
-        self.weekdays[weekday] = self.weekdays[weekday].sort_values(ascending=False)
+        self.weekdays[wd] = self.weekdays[wd].sort_values(ascending=False)
 
     def get_domain(self, link):
         """ Get domain from link and add to the pandas domain list """
@@ -159,7 +159,7 @@ class Proposer(object):
             self.domains[domain] = Domain(domain)
         return domain
 
-    def insert_action(self, url_graph, domain_graph, action, file_action=False):
+    def insert_action(self, url_graph, dom_graph, action, file_action=False):
         # check how far the last unloaded page was in the past
         # and start a new trail if necessary
         if action.timestamp - self.lastnode.timestamp > 60*60:  # 1 hr in sec
@@ -177,15 +177,15 @@ class Proposer(object):
                 url_graph.add_edge(previous.link, action.link, weight=0,
                                    totaltime=0, avgtime=0, trails=set())
             self.trails[-1].append((previous, action, time))
-            graph_edge = url_graph[previous.link][action.link][0]
-            graph_edge['weight'] += 1
-            graph_edge['totaltime'] += time
-            graph_edge['avgtime'] = graph_edge['totaltime']/graph_edge['weight']
-            graph_edge['trails'].add(len(self.trails))
+            g_edge = url_graph[previous.link][action.link][0]
+            g_edge['weight'] += 1
+            g_edge['totaltime'] += time
+            g_edge['avgtime'] = g_edge['totaltime']/g_edge['weight']
+            g_edge['trails'].add(len(self.trails))
             dom1 = previous.domain
             dom2 = action.domain
             if not dom1.dom == dom2.dom:
-                domain_graph.add_edge(dom1, dom2)
+                dom_graph.add_edge(dom1, dom2)
         if not file_action:  # Only websites from a current action
             self.lastnode = action
 
@@ -230,24 +230,24 @@ class Proposer(object):
 
     def propose_weektimes(self, timestamp):
         weekday = datetime.datetime.utcfromtimestamp(timestamp).weekday()
-        otherdays = pd.Series()
+        odays = pd.Series()
         for day in [x for x in range(7) if x != weekday]:
-            otherdays.add(self.weekdays[day])
-        thisday = self.weekdays[weekday]
+            odays.add(self.weekdays[day])
+        tday = self.weekdays[weekday]
         possibledomains = pd.Series()
-        for domain in otherdays.keys():
-            if domain in thisday.keys() and thisday[domain] > otherdays[domain]*3/5/7:
-                possibledomains.set_value(domain, thisday[domain])
+        for domain in odays.keys():
+            if domain in tday.keys() and tday[domain] > odays[domain]*3/5/7:
+                possibledomains.set_value(domain, tday[domain])
         return possibledomains
 
     def propose_daytimes(self, timestamp, r):
-        before = self.daytime.getrangearound(timestamp-2*r, r)
+        bef = self.daytime.getrangearound(timestamp-2*r, r)
         after = self.daytime.getrangearound(timestamp+2*r, r)
-        before.add(after)
+        bef.add(after)
         current = self.daytime.getrangearound(timestamp, r)
         possibledomains = pd.Series()
         for domain in current.keys():
-            if domain in before.keys() and current[domain] > before[domain]*3/5:
+            if domain in bef.keys() and current[domain] > bef[domain]*3/5:
                 possibledomains.set_value(domain, current[domain])
         return possibledomains 
 
