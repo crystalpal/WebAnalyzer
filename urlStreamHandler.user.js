@@ -181,39 +181,6 @@ try {
 
       // Loading in style elements
       // Loading in through external css file only works on non-https websites
-      /*GM_addStyle('#ml_suggestionbox {'+
-        'position:fixed;bottom: 0;right: 0;'+
-        'width:230px;height: 20px;border:1px solid #ffffff;'+
-        'background-color:#333;'+
-        'padding: 15px 5px 10px 25px;'+
-        '-moz-box-shadow:-8px 8px 20px -6px #000;'+
-        '-webkit-box-shadow:-8px 8px 20px -6px #000;'+
-        'box-shadow:-8px 8px 20px -6px #000;'+
-        '-moz-border-radius-topleft: 25px;'+
-        '-webkit-border-top-left-radius: 25px;'+
-        'border-top-left-radius: 25px;'+
-        '-webkit-transition: height .5s ease;'+
-        '-moz-transition: height .5s ease;'+
-        '-ms-transition: height .5s ease;'+
-        '-o-transition: height .5s ease;'+
-        'transition: height .5s ease;}');
-      GM_addStyle('#ml_suggestionbox:hover{height: 150px;}');
-      GM_addStyle('#ml_suggestionbox.expanded {height: 150px;}');
-      GM_addStyle('#ml_suggestionbox h3{color: #f5f5f5;margin:0px;}');
-      GM_addStyle('#ml_suggestionbox .suggestions {'+
-        'display: none;color: #eee;list-style: disc;'+
-        'margin-left: 15px;padding: 8px;position: relative;'+
-        '-webkit-transition: display .5s ease;'+
-        '-moz-transition: display .5s ease;-ms-transition: display .5s ease;'+
-        '-o-transition: display .5s ease;transition: display .5s ease;}');
-      GM_addStyle('#ml_suggestionbox.expanded .suggestions,'+
-      '#ml_suggestionbox.popup .suggestions{display: block;}');
-      GM_addStyle('#ml_suggestionbox a,#ml_suggestionbox a:link,'+
-      '#ml_suggestionbox a:vistited {color: #eee !important;'+
-      'text-decoration: none !important;}');
-      GM_addStyle('#ml_suggestionbox a:hover,'+
-      '#ml_suggestionbox a:active {color: #f5f5ff;'+
-      'border-bottom: 1px solid #ffffff;text-decoration: none;}');*/
     GM_addStyle('#ml_suggestionbox {'+
     'font-size:13px;'+
     'width: 0px;background: #f5f5f5;'+
@@ -287,7 +254,6 @@ try {
       else $("#ml_inner").append('<div class="title">Suggestions</div>');
 
       // Add the suggested links to suggestionbox
-
       var suggestions = "";
       $.each(data.guesses, function(index, val) {
         suggestions += '<li>';
@@ -296,19 +262,9 @@ try {
       });
       $("#ml_inner").append('<ul class="suggestions">'+suggestions+'</ul>');
       $("#ml_inner").append('<div class="switcher-title">'+
-        '<a id="reset_styles" href="#" class="simple">Settings</a></div>');
+        '<a id="reset_styles" href="http://localhost:8000/" class="simple" '+
+        'target="_blank">Settings</a></div>');
       $("#ml_suggestionbox").append('<div class="switch-button">S</div>');
-      // TODO: Do something (e.g. show a top bar with the final link of the
-      //       suspected sequence)
-      /*var best_guess = data.guesses[0][0];
-      var l = document.links;
-      for (var i=0; i<l.length; i++) {
-        // As a simple example, we highlight the link with the highest
-        // probability.
-        if (l[i].href == best_guess) {
-          l[i].style["background-color"]="yellow";
-        }
-    }*/
 
       // Helper function for showing on mouseover - together with CSS3
       $(function(){

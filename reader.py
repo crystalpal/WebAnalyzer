@@ -95,7 +95,6 @@ class Proposer(object):
             if not file_action:
                 if self.lastnode.domain is None:
                     self.lastnode.update_link(row[2], self.domains[domain])
-                print(self.lastnode)
                 return self.suggest_continuation(self.lastnode, suggest_amount)
         
         # Ignore everything but (valid) click actions

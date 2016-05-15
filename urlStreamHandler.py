@@ -6,6 +6,7 @@ urlStreamHandler.py
 """
 
 import sys
+import os
 import argparse
 import json
 import http.server
@@ -13,11 +14,14 @@ import socketserver
 import datetime
 import atexit
 import signal
+import time
 from reader import Proposer
 
+start_time = time.time()
 proposer = Proposer("./data")
+print("Initialised in %s seconds" % (time.time() - start_time))
 date = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-filename = "urls_{}.csv".format(date)
+filename = "data/urls_{}.csv".format(date)
 logfile = open(filename, "w")
 print('Writing to {}'.format(filename))
 
@@ -43,42 +47,51 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
         url = data['url']
         ts = data['ts']
         action = data['action']
-        if action == 'load':
-            toppage = data['top']
-            html = data['html']
-            if toppage:
-                action_str = 'load'
+        # If a request from the settings page, handle separately
+        if "http://localhost:8000/" in url:
+            response = settings_handler(action)
+        else:
+            if action == 'load':
+                toppage = data['top']
+                #html = data['html']
+                if toppage:
+                    action_str = 'load'
+                else:
+                    action_str = 'bg'
+                target = ''
+                print('{:<15}: {}'.format(action_str, url))
+            elif 'target' in data:
+                action_str = action
+                target = data['target']
+                print('{:<15}: {} -> {}'.format(action_str, url, target))
             else:
-                action_str = 'bg'
-            target = ''
-            print('{:<15}: {}'.format(action_str, url))
-        elif 'target' in data:
-            action_str = action
-            target = data['target']
-            print('{:<15}: {} -> {}'.format(action_str, url, target))
-        else:
-            action_str = action
-            target = ''
-            print('{:<15}: {}'.format(action_str, url))
-        inp = ts + ", " + action_str + ", " + url + ", " + target
-        print(inp, file=logfile)
-        suggestions = proposer.parse_action(inp)
-        print("SUGGESTIONS")
-        print(suggestions)
-        if suggestions is not None and len(suggestions) > 0:
-            response = {
-                'success': True,
-                'guesses': suggestions
-            }
-        else:
-            # If no suggestions at all found (probably because of no prev data)
-            # Return the top 5 most popular websites according to wikipedia
-            response = {
-                'success': False,
-                'guesses': ["http://www.google.com", "http://www.facebook.com",
-                            "http://www.youtube.com", "http://www.amazon.com", 
-                            "http://www.wikipedia.org"]
-            }
+                action_str = action
+                target = ''
+                print('{:<15}: {}'.format(action_str, url))
+            inp = ts + ", " + action_str + ", " + url + ", " + target
+            print(inp, file=logfile)
+            start_time = time.time()
+            suggestions = proposer.parse_action(inp)
+            end_time = time.time() - start_time
+            print("SUGGESTIONS")
+            print(suggestions)
+            print("Suggestions in %s seconds" % (end_time))
+            if suggestions is not None and len(suggestions) > 0:
+                response = {
+                    'success': True,
+                    'guesses': suggestions
+                }
+            else:
+                # If no suggestions at all found (probably no previous data)
+                # Return the top 5 most popular websites according to wikipedia
+                response = {
+                    'success': False,
+                    'guesses': ["http://www.google.com",
+                                "http://www.facebook.com",
+                                "http://www.youtube.com",
+                                "http://www.amazon.com", 
+                                "http://www.wikipedia.org"]
+                }
         jsonstr = bytes(json.dumps(response), "UTF-8")
         self.send_response(200)
         self.send_header("Content-type", "application/json")
@@ -86,7 +99,20 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(jsonstr)
 
-
+def settings_handler(action):
+    if action == 'remove':
+        folder = "./data"
+        print("Resetting all logs")
+        global logfile
+        logfile.close()
+        for the_file in os.listdir(folder):
+            file_path = os.path.join(folder, the_file)
+            os.unlink(file_path)
+        logfile = open(filename, "w")
+        global proposer
+        proposer = Proposer("./data")
+        return {'success': True}
+    
 def start_from_csv(filenames):
     """List of csv files that contain a url stream as if they were comming
     from the GreaseMonkey script."""
@@ -96,7 +122,7 @@ def start_from_csv(filenames):
             print('Processing {}'.format(csv_file))
 
 
-def main(argv=None):
+def main(argv=None):    
     parser = argparse.ArgumentParser(description='Record and suggest urls')
     parser.add_argument('--verbose', '-v', action='count',
                         help='Verbose output')
