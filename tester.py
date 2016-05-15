@@ -24,13 +24,13 @@ def readpath(path, output, outputtype):
                     for row in iterrows:
                         if row.split(',')[1].replace("\"", "").strip() == "click":
                             row = clean_file_row(row)
-                            print(row)
                             # If an empty row (eg end of file) or JS link
                             if not row and "javascript" not in row.lower():
                                 continue
                             allrows.append(row)
                 except:  # If an import still fails, skip & keep count
                     print("Skipped file ", file)
+            # Cut 80% of the data
             datacut = round(len(allrows)/100*80)
             proposer = Proposer(path, False)
             for row in allrows[:datacut]:
@@ -39,6 +39,8 @@ def readpath(path, output, outputtype):
                 except:
                     print(file)
                     sys.exit()
+            # Use the last 20% of data to score the results based on the given
+            # predictions towards the actual next website
             totalscore = 0
             for rowindex in range(0, len(allrows[datacut:])-1):
                 proposals = proposer.parse_action(allrows[rowindex], False, 5)
@@ -60,10 +62,14 @@ def clean_file_row(input):
 
 
 def test_together():  
+    """ This function will loop through all files and test the
+    correctness of the proposer """
     readpath('./data', './results/alldata.txt', 'w+')
 
 
 def test_seperately():
+    """ This function will loop through the different users and test the
+    correctness of the proposer """
     users = []
     for i in range(1, 28):
         users.append("u"+str(i))
@@ -71,5 +77,5 @@ def test_seperately():
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
 
 
-test_together()
-test_seperately()
+test_together()  # Tests all files together
+test_seperately()  # Test seperately per user
