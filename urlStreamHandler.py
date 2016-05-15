@@ -48,7 +48,7 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
         ts = data['ts']
         action = data['action']
         # If a request from the settings page, handle separately
-        if "http://localhost:8000/" in url:
+        if "localhost:8000" in url:
             response = settings_handler(action)
         else:
             if action == 'load':

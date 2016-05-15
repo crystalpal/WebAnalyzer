@@ -259,10 +259,7 @@ select{
     width: 200px;
     padding:3px 3px;
 }
-#zoeken{
-    background: #fff url('img/zoeken.png') center right no-repeat;
-    margin: 0px;
-}
+
 input[type=button]{
     background-color:#777;
     border:1px solid #FFF;
@@ -348,57 +345,10 @@ hr{
 
 /* -- bericht blokken -- */
 .box-info,.box-warning,.box-success,.box-hint { margin: 15px 0;text-align: justify;padding: 10px 10px 10px 40px;color:#FFF; border-color: #fae6be;background: #F70;}
-.box-info { background:#296ACC url(img/info.png) 0 0 no-repeat; border-color:#B2B2FF; }
-.box-warning { background:#C33 url(img/warning.png) 5px 5px no-repeat;border-color:#DB4D4D; }
-.box-success { background:#789600 url(img/warning.png) 5px 5px no-repeat;border-color: #88B600; }
+.box-info { background:#296ACC; border-color:#B2B2FF; }
+.box-warning { background:#C33;border-color:#DB4D4D; }
+.box-success { background:#789600; border-color: #88B600; }
 
-table.tablesorter{
-    border-spacing: 0px;
-    margin:10px 0pt 15px 0px;
-    width: 100%;
-    background: #fff;
-    text-align: left;
-    border-collapse: collapse;
-    border: 1px solid #bbb;
-}
-
-table.tablesorter thead tr th, table.tablesorter tfoot tr th {
-    font-weight: bold;
-    color: #fff;
-    background-color: #296ACC;
-    border-bottom: 1px solid #bbb;
-    padding: 4px 20px 4px 4px;
-}
-
-table.tablesorter thead tr .header {
-    background-image: url(img/bg.gif);
-    background-repeat: no-repeat;
-    background-position: center right;
-    cursor: pointer;
-}
-table.tablesorter thead tr .clear{
-    background-image:none;
-    cursor: default;
-} 
-table.tablesorter tbody td {
-    color: #3D3D3D;
-    padding: 4px;
-    /*background-color: #FFF;*/
-    vertical-align: top;
-    border-bottom: 1px solid #bbb;
-}
-table.tablesorter tbody tr{
-    background-color:#FFF;
-}
-table.tablesorter tbody tr.odd{
-    background-color: #ddd;
-}
-table.tablesorter thead tr .headerSortUp {
-    background-image: url(img/asc.gif);
-}
-table.tablesorter thead tr .headerSortDown {
-    background-image: url(img/desc.gif);
-}
 blockquote{
     margin: 10px;
 }

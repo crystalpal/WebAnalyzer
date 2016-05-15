@@ -44,6 +44,8 @@ try {
   var send = function(data, onload) {
     data.ts = (new Date()).toISOString();
     data_string = JSON.stringify(data);
+    if(data_string.indexOf("http://localhost:8000") > -1)
+        return; // Do not sent anything from the settings page
     GM_xmlhttpRequest({
       method: "POST",
       url: "http://localhost:8000",
@@ -204,6 +206,8 @@ try {
     'list-style: none;padding-left: 0px;margin-left: 0px;text-align: left;}');
     GM_addStyle('#ml_suggestionbox ul.suggestions li {'+
     'margin-top:5px;width:250px;}');
+    GM_addStyle('#ml_suggestionbox ul.suggestions li a {font-size: 0.9em;'+
+    "font-family:'Open Sans', Segoe UI light, Tahoma,Helvetica,sans-serif;}");
     GM_addStyle('#ml_suggestionbox a {'+
     'color: #333;text-decoration: none;'+
     '-webkit-transition: color .5s ease;'+
