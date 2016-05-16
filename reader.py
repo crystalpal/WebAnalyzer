@@ -229,14 +229,25 @@ class Proposer(object):
         return proposals
 
     def propose_weektimes(self, timestamp):
+        """ Proposes all the domains (in pandas.Series) that occure more or
+        equal to their average occurence during the rest of the week """
         weekday = datetime.datetime.utcfromtimestamp(timestamp).weekday()
-        odays = pd.Series()
-        for day in [x for x in range(7) if x != weekday]:
-            odays.add(self.weekdays[day])
         tday = self.weekdays[weekday]
+        # Get the total count of all domains for all days except today
+        dailyavg = pd.Series()
+        for day in [x for x in range(7) if x != weekday]:
+            oday = self.weekdays[day]
+            for domain in set(oday.keys()).intersection(tday.keys()):
+                if domain not in dailyavg.keys():
+                    dailyavg.set_value(domain, oday[domain])
+                else:
+                    dailyavg[domain] += oday[domain]
         possibledomains = pd.Series()
-        for domain in odays.keys():
-            if domain in tday.keys() and tday[domain] > odays[domain]*3/5/7:
+        for domain in tday.keys():
+            if domain in dailyavg.keys():
+                if tday[domain] > dailyavg[domain]/6:
+                    possibledomains.set_value(domain, tday[domain])
+            else:
                 possibledomains.set_value(domain, tday[domain])
         return possibledomains
 

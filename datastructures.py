@@ -51,6 +51,9 @@ class Domain(object):
         self.dom = url
         self.urls = pd.Series()
 
+    def __str__(self):
+        return (self.dom)
+
 
 class CircularList():
     items = []
