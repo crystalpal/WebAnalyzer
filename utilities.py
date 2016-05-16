@@ -7,7 +7,7 @@ utilities.py
 """
 import time as tm
 import pandas as pd
-import sys
+import math as m
 
 def line_prepender(filename, line):
     with open(filename, 'r+') as f:
@@ -70,55 +70,56 @@ def combine_suggestionstime(timeproposals, doms):
     return suggestions
 
 
-def combine_suggestions(current, timeproposals, domainsug, urls, amount):    
+def combine_suggestions(current, timeproposals, domainsug, urls, domains, amount):    
     """ Combine all suggestions to one list of length amount that can be
         returned """
     print("Domainsuggestions:")
     print(domainsug)
     print("Timesuggestions:")
     print(timeproposals)
-    sys.exit()
 
     suggestions = []
+    firstsuggestions = m.floor(amount/2)
       
-    for domain in domainsug.keys()[1:3]:
+    """ add for the first two domain the top 1 links """
+    for domain in domainsug.keys()[0:firstsuggestions]:
         for d in domainsug[domain][:1]:
             if d not in suggestions:
                 suggestions.append(d)
-    
-    for domain in timeproposals.keys()[1:3]:
-        for proposal in domainsug[domain][:1]:
-            if proposal in domainsug.keys():
-                suggestions.append(domainsug[proposal][:1])
-  
-    domains = [x for x in timeproposals.keys() if x not in suggestions]
-    counter = 0
-    for domain in domains:
+                
+    """ add for the first two timedomains the top 1 links if in domains and
+    timedomains not already in suggestions """
+    timesuggestions = []
+    nextsuggestions = 2*firstsuggestions - len(suggestions)
+    for domain in timeproposals.keys()[0:nextsuggestions]:
         if domain in domainsug.keys():
-            for d in domainsug[domain][:1]:
-                if d not in suggestions:
-                    suggestions.append(d)
-                    counter += 1
-                    if counter == 2:
-                        break
-    length = 0
-    cur = len(suggestions)
-    if amount > cur:
-        if amount - cur < len(current.domain.urls):
-            length = amount - len(suggestions)
-        else:
-            length = len(current.domain.urls)
-    if len(suggestions) < amount:
-        for i in range(0, length):
-            suggestions.append(current.domain.urls.keys()[i])
+            for proposal in domainsug[domain][:1]:
+                suggestions.append(proposal)
+                timesuggestions.append(suggestions[-1])
+                    
+    """ if no timesuggestions could be found for the domains, use the top
+    domains instead """
+    for domain in timeproposals.keys()[len(timesuggestions):nextsuggestions]:
+        if domain in domains:
+            for proposal in domains[domain].urls.keys()[:1]:
+                if not proposal in suggestions: 
+                    suggestions.append(proposal)
     
-    if len(suggestions) < amount:
-        for domain in domainsug.keys():
-            for d in domainsug[domain][:1]:
-                if d not in suggestions:
-                    suggestions.append(d)
-                    if len(suggestions) == amount:
-                        return suggestions
+    """ if the amount of suggestions is not met, start adding urls
+    of the current domain using mle """
+    softmle = amount - len(suggestions)       
+    for url in current.domain.urls.keys()[0:softmle]:
+        if not url in suggestions:
+            suggestions.append(url)
+        
+    """ if the amount of suggestions is not met, start adding urls
+    from the most visted domains usings mle """
+    hardmle = amount - len(suggestions)
+    for domain in list(domains.keys())[0:hardmle]:
+        for url in domains[domain].urls[:1]:
+            if not url in suggestions:
+                suggestions.append(url)
+  
     return suggestions
 
 
@@ -126,7 +127,12 @@ def combine_timeproposals(dayproposals, weekproposals):
     """ Returns a sorted pandas.Series() of the combined weight where
         weekproposals get a bonusweight if they appear in the dayproposals"""
     if dayproposals.size == 0:
+        if weekproposals.size == 0:
+            return dayproposals
         return weekproposals
+    if weekproposals.size == 0:
+            return dayproposals
+            
     extrabonus = weekproposals.mean()
     max_week = weekproposals[0]
     max_day = dayproposals[0]

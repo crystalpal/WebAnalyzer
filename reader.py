@@ -21,7 +21,7 @@ class Proposer(object):
 
     def __init__(self, path, fillstructures=True):
         self.clicks = []   # A list containing every click action
-        self.domains = {}  # A dictionary mapping domain names on domain objs
+        self.domains = pd.Series()  # A dictionary mapping domain names on domain objs
         self.urls = {}     # A dictionnary mapping urls on action objects
         self.maxtime = 0   # The masimum time that is spent on a single url
         # The maximum time spent in a domain
@@ -127,11 +127,7 @@ class Proposer(object):
         domain = self.get_domain(link)
         clickaction = Action(act, self.domains[domain], previous, link,
                               timefmt, self.colors[len(self.clicks) % 9])
-        if clickaction.link not in self.domains[domain].urls.keys():
-            clickaction.domain.urls.set_value(clickaction.link, 1)
-        else:
-            self.domains[domain].urls[clickaction.link] += 1
-        self.domains[domain].urls.sort_values(ascending=False)
+        clickaction.domain.addurl(clickaction.link)
         return clickaction
 
     def insert_in_timelists(self, domain, timestamp):
@@ -205,6 +201,7 @@ class Proposer(object):
                                           timeproposals[:10],
                                           domainproposals[:10],
                                           self.urls,
+                                          self.domains,
                                           suggestion_amount)
         # sys.exit()
         return suggestions

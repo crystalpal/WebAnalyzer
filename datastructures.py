@@ -47,12 +47,19 @@ class Domain(object):
     urls = pd.Series()
     trail = 0
 
-    def __init__(self, url):
-        self.dom = url
+    def __init__(self, domain):
+        self.dom = domain
         self.urls = pd.Series()
 
     def __str__(self):
         return (self.dom)
+        
+    def addurl(self, url):
+        if url not in self.urls.keys():
+            self.urls.set_value(url, 1)
+        else:
+            self.urls[url] += 1
+        self.urls.sort_values(ascending=False)
 
 
 class CircularList():
