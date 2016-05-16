@@ -94,7 +94,7 @@ def test_seperately():
     """ This function will loop through the different users and test the
     correctness of the proposer """
     users = []
-    for i in [x for x in range(1,28) if not x == 20]:
+    for i in [x for x in range(1,28) if not x == 20 and not x == 16]:
         users.append("u"+str(i))
     for user in users:
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
