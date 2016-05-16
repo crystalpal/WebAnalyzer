@@ -79,7 +79,7 @@ def combine_suggestions(current, timeproposals, domainsug, urls, domains, amount
     print(timeproposals)
 
     suggestions = []
-    firstsuggestions = m.floor(amount/2) + 1
+    firstsuggestions = m.floor(amount/10*6)
       
     """ add for the first two domain the top 1 links """
     for domain in domainsug.keys()[0:firstsuggestions]:
@@ -92,7 +92,7 @@ def combine_suggestions(current, timeproposals, domainsug, urls, domains, amount
     """ add for the first two timedomains the top 1 links if in domains and
     timedomains not already in suggestions """
     timesuggestions = []
-    nextsuggestions = 2*firstsuggestions - len(suggestions) -1
+    nextsuggestions = amount - len(suggestions)
     for domain in timeproposals.keys()[0:nextsuggestions]:
         if domain in domainsug.keys():
             for proposal in domainsug[domain][:1]:
@@ -104,31 +104,35 @@ def combine_suggestions(current, timeproposals, domainsug, urls, domains, amount
                     
     """ if no timesuggestions could be found for the domains, use the top
     domains instead """
-    for domain in timeproposals.keys()[len(timesuggestions):nextsuggestions]:
-        for proposal in domains[domain].urls.keys()[:1]:
-            if not proposal in suggestions: 
-                suggestions.append(proposal)
-            else:
-                nextsuggestions += 1
+    nextsuggestions = amount - len(suggestions)
+    if nextsuggestions > 0:
+        for domain in timeproposals.keys()[len(timesuggestions):nextsuggestions]:
+            for proposal in domains[domain].urls.keys()[:1]:
+                if not proposal in suggestions: 
+                    suggestions.append(proposal)
+                else:
+                    nextsuggestions += 1
     
     """ if the amount of suggestions is not met, start adding urls
     of the current domain using mle """
-    softmle = amount - len(suggestions)       
-    for url in current.domain.urls.keys()[0:softmle]:
-        if not url in suggestions:
-            suggestions.append(url)
-        else:
-            softmle += 1
+    softmle = amount - len(suggestions)  
+    if softmle > 0:     
+        for url in current.domain.urls.keys()[0:softmle]:
+            if not url in suggestions:
+                suggestions.append(url)
+            else:
+                softmle += 1
         
     """ if the amount of suggestions is not met, start adding urls
     from the most visted domains usings mle """
     hardmle = amount - len(suggestions)
-    for domain in list(domains.keys())[0:hardmle]:
-        for url in domains[domain].urls[:1]:
-            if not url in suggestions:
-                suggestions.append(url)
-            else:
-                hardmle += 1
+    if hardmle > 0: 
+        for domain in list(domains.keys())[0:hardmle]:
+            for url in domains[domain].urls[:1]:
+                if not url in suggestions:
+                    suggestions.append(url)
+                else:
+                    hardmle += 1
   
     return suggestions
 
