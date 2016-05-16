@@ -38,7 +38,7 @@ def readpath(path, output, outputtype):
                 except:  # If an import still fails, skip & keep count
                     print("Skipped file ", file)
             # Cut 80% of the data
-            datacut = round(len(allrows)/100*50)
+            datacut = round(len(allrows)/100*80)
             proposer = Proposer(path, False)
             for row in allrows[:datacut]:
                 try:
@@ -94,7 +94,7 @@ def test_seperately():
     """ This function will loop through the different users and test the
     correctness of the proposer """
     users = []
-    for i in range(1,28):
+    for i in [x for x in range(1,28) if not x == 20]:
         users.append("u"+str(i))
     for user in users:
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
