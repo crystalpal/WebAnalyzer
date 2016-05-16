@@ -142,9 +142,9 @@ class Proposer(object):
         # Add to a day-of-week list
         wd = tm.gmtime(timestamp).tm_wday
         val = 1
-        if domain in self.weekdays[wd].keys():
-            val = self.weekdays[wd].get_value(domain) + val
-        self.weekdays[wd].set_value(domain, val)
+        if domain.dom in self.weekdays[wd].keys():
+            val = self.weekdays[wd].get_value(domain.dom) + val
+        self.weekdays[wd].set_value(domain.dom, val)
         # Sort on occurence count
         self.weekdays[wd] = self.weekdays[wd].sort_values(ascending=False)
 
@@ -187,7 +187,8 @@ class Proposer(object):
             if not dom1.dom == dom2.dom:
                 dom_graph.add_edge(dom1, dom2)
         if not file_action:  # Only websites from a current action
-            self.lastnode = action
+            self.lastnode = action        
+        self.insert_in_timelists(dom2.dom, action.timestamp)
 
     def suggest_continuation(self, action, suggestion_amount):
         """ Gathers site proposals based on time, popular domains and current

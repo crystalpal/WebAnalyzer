@@ -27,8 +27,7 @@ def gettimeofday(timestamp):
     
 
 def parse_timestamp(timestamp, seconds=True):
-    """ Parse timestamp - everything except for miliseconds after the dot
-    """
+    """ Parse timestamp - everything except for miliseconds after the dot """
     parsed = tm.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")
     if not seconds: 
         return parsed

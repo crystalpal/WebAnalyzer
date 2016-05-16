@@ -68,18 +68,21 @@ class CircularList():
             self.items[x] = []
         self.items[x].append(domain)
 
-    def getrangearound(self, timestamp, seconds):
+    def getrangearound(self, timestamp, minutes):
         """ Suggest domains at the given timestamp within a given deviation
         based on their occurence count """
-        start = gettimeofday(timestamp - seconds)
-        end = gettimeofday(timestamp + seconds)
+        start = gettimeofday(timestamp - minutes*60)
+        end = gettimeofday(timestamp + minutes*60)
+        print("----")
         if start > end:  # start < 0 or end > 60*60*24:
-            rangechain = chain(range(0,end), range(start, 60*60*24))
+            rangechain = chain(range(0,end), range(start, 60*24))
         else:
             rangechain = range(start,end)
         alldomains = pd.Series()
+        print(rangechain)
         for i in rangechain:
             for dom in self.items[i]:
+                print(dom)
                 val = 1
                 if dom in alldomains.keys():
                     val = alldomains.get_value(dom) + val

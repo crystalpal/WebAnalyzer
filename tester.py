@@ -2,6 +2,7 @@
 import os
 from reader import Proposer
 import pandas as pd
+import sys
 
 
 def readpath(path, output, outputtype):
@@ -82,7 +83,7 @@ def clean_file_row(input):
 def test_together():  
     """ This function will loop through all files and test the
     correctness of the proposer """
-    readpath('./data', './results/alldata.txt', 'w+')
+    readpath('./data1', './results/alldata.txt', 'w+')
 
 
 def test_seperately():
