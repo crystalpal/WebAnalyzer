@@ -123,9 +123,9 @@ def checkl(path):
         print(user + " " + str(loadcounter))
                 
 
-checkl('./testdata/')
+#checkl('./testdata/')
 
 #test_together()  # Tests all files together
 avg_recall = []
 avg_precision = []
-#test_seperately()  # Test seperately per user
+test_seperately()  # Test seperately per user
