@@ -5,7 +5,13 @@ import pandas as pd
 import sys
 
 
+
+avg_recall = []
+avg_precision = []
+
 def readpath(path, output, outputtype):
+    global avg_recall
+    global avg_precision
     userfiles = pd.Series()
     for file in os.listdir(path):
         user = file.split("_")[0]
@@ -13,8 +19,6 @@ def readpath(path, output, outputtype):
             userfiles[user] = []
         userfiles[user].append(file)
         userfiles.sort_values(inplace=True)
-    avg_recall = []
-    avg_precision = []
     with open(output, outputtype) as f:
         for user in userfiles.keys():
             if len(userfiles[user]) == 0:

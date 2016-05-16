@@ -202,8 +202,8 @@ class Proposer(object):
         paths = paths.sort_values(ascending=False)
         domainproposals = domain_suggestions(paths, self.urls)
         suggestions = combine_suggestions(action,
-                                          timeproposals,
-                                          domainproposals,
+                                          timeproposals[:10],
+                                          domainproposals[:10],
                                           self.urls,
                                           suggestion_amount)
         # sys.exit()
