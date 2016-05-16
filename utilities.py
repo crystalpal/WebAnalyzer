@@ -7,7 +7,7 @@ utilities.py
 """
 import time as tm
 import pandas as pd
-
+import sys
 
 def line_prepender(filename, line):
     with open(filename, 'r+') as f:
@@ -77,6 +77,7 @@ def combine_suggestions(current, timeproposals, domainsug, urls, amount):
     print(domainsug)
     print("Timesuggestions:")
     print(timeproposals)
+    sys.exit()
 
     suggestions = []
       
@@ -85,9 +86,10 @@ def combine_suggestions(current, timeproposals, domainsug, urls, amount):
             if d not in suggestions:
                 suggestions.append(d)
     
-    for proposal in timeproposals.keys()[1:3]:
-        if proposal in domainsug.keys():
-            suggestions.append(domainsug[proposal][:1])
+    for domain in timeproposals.keys()[1:3]:
+        for proposal in domainsug[domain][:1]:
+            if proposal in domainsug.keys():
+                suggestions.append(domainsug[proposal][:1])
   
     domains = [x for x in timeproposals.keys() if x not in suggestions]
     counter = 0
