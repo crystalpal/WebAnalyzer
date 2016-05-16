@@ -45,6 +45,7 @@ def readpath(path, output, outputtype):
             recall = 0.0  # relevant retrieved / relevant
             precision = 0.0  # relevant retrieved / retrieved
             totalscore = 0
+            endlist = 4
             for rowindex in range(0, len(allrows[datacut:])-4):
                 proposals = proposer.parse_action(allrows[rowindex], False, 5)
                 if proposals is not None:
@@ -88,7 +89,7 @@ def test_seperately():
     """ This function will loop through the different users and test the
     correctness of the proposer """
     users = []
-    for i in range(1, 5):
+    for i in [x for x in range(1,28) if not x == 9 or not x == 10]:
         users.append("u"+str(i))
     for user in users:
         readpath('./testdata/'+user, './results/seperate.txt', 'a')

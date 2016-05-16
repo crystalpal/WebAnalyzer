@@ -192,7 +192,7 @@ class Proposer(object):
     def suggest_continuation(self, action, suggestion_amount):
         """ Gathers site proposals based on time, popular domains and current
         click stream """
-        dayproposals = self.propose_daytimes(action.timestamp, 15*60)
+        dayproposals = self.propose_daytimes(action.timestamp, 15)
         weekproposals = self.propose_weektimes(action.timestamp)
         timeproposals = combine_timeproposals(dayproposals, weekproposals)
         paths = pd.Series()

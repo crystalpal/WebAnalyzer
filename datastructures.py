@@ -56,7 +56,7 @@ class CircularList():
     items = []
 
     def __init__(self):
-        self.items = [[] for x in range(60*60*24)]
+        self.items = [[] for x in range(60*24)]
 
     def add(self, domain, timestamp):
         """ Add a domain to a timeslot within a day """

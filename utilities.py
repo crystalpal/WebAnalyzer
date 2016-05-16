@@ -21,10 +21,9 @@ def line_prepender(filename, line):
 def gettimeofday(timestamp):
     """" Returns the time of day in seconds"""
     time = tm.gmtime(timestamp)
-    hours = (time.tm_hour)*60*60
-    minutes = time.tm_min * 60
-    seconds = time.tm_sec
-    return hours + minutes + seconds
+    hours = (time.tm_hour)*60
+    minutes = time.tm_min
+    return hours + minutes
     
 
 def parse_timestamp(timestamp, seconds=True):
