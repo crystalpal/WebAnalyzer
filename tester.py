@@ -94,13 +94,38 @@ def test_seperately():
     """ This function will loop through the different users and test the
     correctness of the proposer """
     users = []
-    for i in [x for x in range(1,28) if not x == 20 and not x == 16]:
+    for i in [x for x in range(1,28) if not x in [16,17,20,27]]:
         users.append("u"+str(i))
     for user in users:
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
+ 
+def checkl(path):
+    userfiles = pd.Series()
+    for folder in os.listdir(path):
+        for file in os.listdir(path + '/'+folder):
+            user = file.split("_")[0]
+            if user not in userfiles.keys():
+                userfiles[user] = []
+            userfiles[user].append(file)
+    userfiles.sort_values(inplace=True) 
+    for user in userfiles.keys():
+        if len(userfiles[user]) == 0:
+            continue
+        loadcounter = 0
+        for file in userfiles[user]:
+            try:
+                iterrows = iter(open(path + '/' + user + '/' + file))
+                for row in iterrows:
+                    if row.split(',')[1].replace("\"", "").strip() == "load":
+                        loadcounter += 1
+            except:  # If an import still fails, skip & keep count
+                print("Skipped file ", file)
+        print(user + " " + str(loadcounter))
+                
 
+checkl('./testdata/')
 
 #test_together()  # Tests all files together
 avg_recall = []
 avg_precision = []
-test_seperately()  # Test seperately per user
+#test_seperately()  # Test seperately per user
