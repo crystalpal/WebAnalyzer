@@ -194,7 +194,7 @@ class Proposer(object):
         timeproposals = combine_timeproposals(dayproposals, weekproposals)
         paths = pd.Series()
         # trail = [[],0]
-        breathtraverse(self.F, [(action.link, 0)], [], paths, 5, 20)
+        breathtraverse(self.F, [(action.link, 0)], [], paths, 1, 4)
         paths = paths.sort_values(ascending=False)
         domainproposals = domain_suggestions(paths, self.urls)
         suggestions = combine_suggestions(action,

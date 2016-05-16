@@ -50,7 +50,6 @@ def readpath(path, output, outputtype):
             recall = 0.0  # relevant retrieved / relevant
             precision = 0.0  # relevant retrieved / retrieved
             totalscore = 0
-            endlist = 4
             for rowindex in range(0, len(allrows[datacut:])-4):
                 proposals = proposer.parse_action(allrows[rowindex], False, 5)
                 if proposals is not None:
