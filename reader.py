@@ -80,24 +80,24 @@ class Proposer(object):
         """ Gives N suggestions from a comma seperated inputline """
         row = self.clean_file_row(inputline).split(',')
         act = row[1]
-        
+
         if act=="load" and not file_action and self.lastnode.link is not None:
             if not self.lastnode.link == row[2]:
                 row[1] = "click"
                 act = "click"
                 row[3] = row[2]
                 row[2] = self.lastnode.link
-                print("Generated click",row[2], "->", row[3], sep=" ")
-        
+                print("Generated click", row[2], "->", row[3], sep=" ")
+
         # If a load action, return suggestions
         if act == "load":
             domain = self.get_domain(row[2])
             self.insert_in_timelists(domain, parse_timestamp(row[0]))
+            if self.lastnode.domain is None:
+                self.lastnode.update_link(row[2], self.domains[domain])
             if not file_action:
-                if self.lastnode.domain is None:
-                    self.lastnode.update_link(row[2], self.domains[domain])
                 return self.suggest_continuation(self.lastnode, suggest_amount)
-        
+
         # Ignore everything but (valid) click actions
         if not act == "click" or "//" not in row[3]:
             return None
@@ -122,10 +122,10 @@ class Proposer(object):
             self.create_action(act, None, previous, timestamp)
         current_action = self.create_action(act, previous, link, timestamp)
         return current_action
-    
+
     def create_action(self, act, previous, link, timefmt):
         domain = self.get_domain(link)
-        clickaction =  Action(act, self.domains[domain], previous, link, 
+        clickaction = Action(act, self.domains[domain], previous, link,
                               timefmt, self.colors[len(self.clicks) % 9])
         if clickaction.link not in self.domains[domain].urls.keys():
             clickaction.domain.urls.set_value(clickaction.link, 1)
@@ -133,7 +133,7 @@ class Proposer(object):
             self.domains[domain].urls[clickaction.link] += 1
         self.domains[domain].urls.sort_values(ascending=False)
         return clickaction
-        
+
     def insert_in_timelists(self, domain, timestamp):
         """ Insert the loaded domain in the time-based suggestion lists """
         domain = self.domains[domain]
@@ -187,13 +187,13 @@ class Proposer(object):
             if not dom1.dom == dom2.dom:
                 dom_graph.add_edge(dom1, dom2)
         if not file_action:  # Only websites from a current action
-            self.lastnode = action        
-        self.insert_in_timelists(dom2.dom, action.timestamp)
+            self.lastnode = action
+        self.insert_in_timelists(action.domain.dom, action.timestamp)
 
     def suggest_continuation(self, action, suggestion_amount):
         """ Gathers site proposals based on time, popular domains and current
         click stream """
-        dayproposals = self.propose_daytimes(action.timestamp, 15)
+        dayproposals = self.propose_daytimes(action.timestamp, 45)
         weekproposals = self.propose_weektimes(action.timestamp)
         timeproposals = combine_timeproposals(dayproposals, weekproposals)
         paths = pd.Series()

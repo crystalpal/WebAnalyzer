@@ -71,14 +71,14 @@ def combine_suggestionstime(timeproposals, doms):
 
 
 def combine_suggestions(current, timeproposals, domainsug, urls, amount):    
-    """    
+    """ Combine all suggestions to one list of length amount that can be
+        returned """
     print("Domainsuggestions:")
     print(domainsug)
     print("Timesuggestions:")
     print(timeproposals)
-    """
+
     suggestions = []
-    
       
     for domain in domainsug.keys()[1:3]:
         for d in domainsug[domain][:1]:
@@ -121,16 +121,26 @@ def combine_suggestions(current, timeproposals, domainsug, urls, amount):
 
 
 def combine_timeproposals(dayproposals, weekproposals):
+    """ Returns a sorted pandas.Series() of the combined weight where
+        weekproposals get a bonusweight if they appear in the dayproposals"""
+    if dayproposals.size == 0:
+        return weekproposals
+    extrabonus = weekproposals.mean()
+    max_week = weekproposals[0]
+    max_day = dayproposals[0]
     tps = pd.Series()  # timeproposals
-    for daydomain in dayproposals.keys():
-        if daydomain in weekproposals.keys():
-            # divide by 7 & 8, reducing the influence a single outburst has
-            count = dayproposals[daydomain] + weekproposals[daydomain]
-            tps[daydomain] = count
+    for daydomain in weekproposals.keys():
+        if daydomain in dayproposals.keys():
+            # Normalise both values, sum them so the day value gets a clear
+            # advantage (less links means higher normalised values)
+            # multiply by normalisation again and add extra bonus
+            daycount = dayproposals[daydomain]/max_day
+            weekcount = weekproposals[daydomain]/max_week
+            tps[daydomain] = (daycount + weekcount) * max_week + extrabonus
         else:
-            tps[daydomain] = dayproposals[daydomain]
+            tps[daydomain] = weekproposals[daydomain]
     # calculate belief of timeproposals
-    if(len(tps) > 0):
+    if(tps.size > 0):
         prop_amount = len(tps.values)
         avgscore = float(sum(tps.values)/prop_amount) - 1/prop_amount
     else:

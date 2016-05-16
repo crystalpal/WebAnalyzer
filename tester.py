@@ -38,7 +38,7 @@ def readpath(path, output, outputtype):
                 except:  # If an import still fails, skip & keep count
                     print("Skipped file ", file)
             # Cut 80% of the data
-            datacut = round(len(allrows)/100*80)
+            datacut = round(len(allrows)/100*50)
             proposer = Proposer(path, False)
             for row in allrows[:datacut]:
                 try:
@@ -70,9 +70,9 @@ def readpath(path, output, outputtype):
             f.write(user + " " + str(totalscore) + " " + 
                     str(recall) + " " + str(precision) + " " + 
                     str(len(allrows[datacut:])-1) + "\n" )
-    print(avg_recall)
+    #print(avg_recall)
     print("AVG recall:", (sum(avg_recall) / len(avg_recall)))
-    print(avg_precision)
+    #print(avg_precision)
     print("AVG precision:", (sum(avg_precision) / len(avg_precision)))
 
 
