@@ -100,7 +100,7 @@ def test_seperately():
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
 
 
-test_together()  # Tests all files together
+#test_together()  # Tests all files together
 avg_recall = []
 avg_precision = []
 test_seperately()  # Test seperately per user
