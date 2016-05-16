@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+"""
+tester.py
+
+@author: Joren & Vincent
+"""
 import os
 from reader import Proposer
 import pandas as pd
-import sys
 
 
 
@@ -124,7 +128,7 @@ def checkl(path):
 
 #checkl('./testdata/')
 
-#test_together()  # Tests all files together
+test_together()  # Tests all files together
 avg_recall = []
 avg_precision = []
-test_seperately()  # Test seperately per user
+#test_seperately()  # Test seperately per user

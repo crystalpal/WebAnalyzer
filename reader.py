@@ -10,7 +10,6 @@ import time as tm
 import datetime
 import pandas as pd
 import os
-import sys
 from datastructures import Action, Domain, CircularList
 from utilities import combine_timeproposals, domain_suggestions
 from utilities import combine_suggestions, parse_timestamp
