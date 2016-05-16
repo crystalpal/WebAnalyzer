@@ -87,7 +87,7 @@ def clean_file_row(input):
 def test_together():  
     """ This function will loop through all files and test the
     correctness of the proposer """
-    readpath('./data1', './results/alldata.txt', 'w+')
+    readpath('./data', './results/alldata.txt', 'w+')
 
 
 def test_seperately():
@@ -100,5 +100,7 @@ def test_seperately():
         readpath('./testdata/'+user, './results/seperate.txt', 'a')
 
 
-#test_together()  # Tests all files together
+test_together()  # Tests all files together
+avg_recall = []
+avg_precision = []
 test_seperately()  # Test seperately per user

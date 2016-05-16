@@ -73,16 +73,13 @@ class CircularList():
         based on their occurence count """
         start = gettimeofday(timestamp - minutes*60)
         end = gettimeofday(timestamp + minutes*60)
-        print("----")
         if start > end:  # start < 0 or end > 60*60*24:
             rangechain = chain(range(0,end), range(start, 60*24))
         else:
             rangechain = range(start,end)
         alldomains = pd.Series()
-        print(rangechain)
         for i in rangechain:
             for dom in self.items[i]:
-                print(dom)
                 val = 1
                 if dom in alldomains.keys():
                     val = alldomains.get_value(dom) + val
